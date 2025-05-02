@@ -1,16 +1,53 @@
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
-import { dracula } from "@uiw/codemirror-theme-dracula"; // Correct import
-import { debounce } from "lodash";
+import { python } from "@codemirror/lang-python";
+import { java } from "@codemirror/lang-java";
+import { cpp } from "@codemirror/lang-cpp";
+import { html } from "@codemirror/lang-html";
+import { css } from "@codemirror/lang-css";
+import { markdown } from "@codemirror/lang-markdown";
+import { material } from "@uiw/codemirror-theme-material";
+import { githubDark } from "@uiw/codemirror-theme-github";
+import { createTheme } from "@uiw/codemirror-themes";
+import { draculaInit } from "@uiw/codemirror-theme-dracula";
+import { debounce, throttle } from "lodash";
+import { EditorView, WidgetType, Decoration } from "@codemirror/view";
+import { EditorState } from "@codemirror/state";
 
-
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useContext, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import axios from '../config/axios.js'
 import { initializeSocket, receiveMessage, sendMessage } from '../config/socket.js'
 import { UserContext } from '../context/UserProvider.jsx'
 import Markdown from 'markdown-to-jsx'
 import { getWebContainer } from "../config/webContainer.js";
+
+const dracula = draculaInit();
+
+const languageExtensions = {
+  js: javascript(),
+  jsx: javascript({ jsx: true }),
+  ts: javascript({ typescript: true }),
+  py: python(),
+  java: java(),
+  cpp: cpp(),
+  html: html(),
+  css: css(),
+  md: markdown(),
+};
+
+const detectLanguage = (filename) => {
+  const extension = (filename || 'index.js').split('.').pop().toLowerCase();
+  return languageExtensions[extension] || javascript();
+};
+
+const THEMES = {
+  dracula,
+  material,
+  githubDark
+};
+
+const CURSOR_TIMEOUT = 2000; // 2 seconds
 
 const Project = () => {
   const location = useLocation()
@@ -25,7 +62,7 @@ const Project = () => {
   const [messages, setMessages] = useState([])
 
   const [fileTree, setFileTree] = useState({})
-  const [currentFile, setCurrentFile] = useState(null)
+  const [currentFile, setCurrentFile] = useState('index.js');
   const [openFiles, setOpenFiles] = useState([])
   const [openFolders, setOpenFolders] = useState([])
 
@@ -35,11 +72,17 @@ const Project = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [iframeUrl, setIframeUrl] = useState(null)
   const [runProcess, setRunProcess] = useState(null);
+  const [selectedTheme, setSelectedTheme] = useState('dracula');
 
   const [newFileName, setNewFileName] = useState("");
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
+  const [collaborators, setCollaborators] = useState({});
+  const [localCursor, setLocalCursor] = useState(null);
+  const [remoteCursors, setRemoteCursors] = useState([]);
+  const typingTimeoutRef = useRef(null);
 
   const [isPreviewPanelOpen, setIsPreviewPanelOpen] = useState(false);
 
@@ -272,22 +315,21 @@ const Project = () => {
     let content;
     try {
       const parsed = typeof message === 'string' ? JSON.parse(message) : message;
-      content = typeof parsed.text === 'object' 
+      content = typeof parsed.text === 'object'
         ? JSON.stringify(parsed.text, null, 2)
         : parsed.text || parsed;
     } catch {
-      content = typeof message === 'object' 
-        ? JSON.stringify(message, null, 2) 
+      content = typeof message === 'object'
+        ? JSON.stringify(message, null, 2)
         : message;
     }
-  
+
     // Check for structured content patterns
     const isStructured = /(\n|{|}|\[|\]|`|\\|\/)/.test(content);
-  
+
     return (
-      <div className={`ai-reply bg-gray-950 rounded p-2 ${
-        isStructured ? 'overflow-auto' : 'overflow-visible'
-      }`}>
+      <div className={`ai-reply bg-gray-950 rounded p-2 ${isStructured ? 'overflow-auto' : 'overflow-visible'
+        }`}>
         <Markdown>
           {isStructured ? `\`\`\`\n${content}\n\`\`\`` : content}
         </Markdown>
@@ -350,7 +392,152 @@ const Project = () => {
       .catch(err => {
         console.log(err)
       })
+
+    // Listen for remote changes
+    receiveMessage('CODE_CHANGE', ({ content, filePath, cursorPos, userId }) => {
+      if (userId !== user._id) {
+        setFileTree(prev => {
+          const newTree = structuredClone(prev);
+          const parts = filePath.split('/');
+          let current = newTree;
+
+          for (let i = 0; i < parts.length - 1; i++) {
+            current = current[parts[i]] = current[parts[i]] || {};
+          }
+
+          const fileName = parts[parts.length - 1];
+          current[fileName] = { file: { contents: content } };
+          return newTree;
+        });
+      }
+    });
+
+    receiveMessage('CURSOR_UPDATE', ({ userId, cursorPos, filePath, name }) => {
+      if (userId !== user._id && filePath === currentFile) {
+        setRemoteCursors((prev) => ({
+          ...prev,
+          [userId]: {
+            pos: cursorPos,
+            color: getColorForSender(userId),
+            name: name,
+            lastActive: Date.now(),
+          },
+        }));
+      }
+    });
+
+    receiveMessage('TYPING_STATUS', ({ userId, isTyping }) => {
+      setCollaborators(prev => ({
+        ...prev,
+        [userId]: { ...prev[userId], isTyping }
+      }));
+    });
   }, [])
+
+  // Custom cursor decoration extension
+  const collaborativeDecorations = (cursors) => {
+    return EditorView.decorations.of(state => {
+      const decorations = [];
+      Object.entries(cursors).forEach(([userId, { pos, color, name }]) => {
+        decorations.push(
+          Decoration.widget({
+            widget: new CursorWidget(userId, color, name),
+            side: 1
+          }).range(pos)
+        );
+      });
+      return Decoration.set(decorations, true);
+    });
+  };
+  
+
+  class CursorWidget extends WidgetType {
+    constructor(userId, color, name) {
+      super();
+      this.userId = userId;
+      this.color = color;
+      this.name = name;
+    }
+
+    eq(other) {
+      return this.userId === other.userId && this.color === other.color && this.name === other.name;
+    }
+
+    toDOM() {
+      const span = document.createElement("span");
+      span.className = "collaborator-cursor";
+      span.style.borderLeft = `2px solid ${this.color}`;
+      span.setAttribute("data-user", this.name || this.userId);
+      // span.appendChild(tooltip); // Removed JS tooltip, only CSS tooltip remains
+      return span;
+    }
+
+    ignoreEvent() {
+      return true;
+    }
+  }
+
+  // Modified CodeMirror component with collaborative features
+  const codeMirrorExtensions = [
+    EditorState.allowMultipleSelections.of(true),
+    EditorView.lineWrapping,
+    detectLanguage(currentFile),
+    collaborativeDecorations(remoteCursors),
+    EditorView.updateListener.of(update => {
+      // Cursor tracking emit
+      if (update.selectionSet) {
+        const cursorPos = update.state.selection.main.head;
+        throttledCursorUpdate(cursorPos);
+      }
+      if (update.docChanged || update.selectionSet) {
+        handleCodeChange(update);
+      }
+    })
+  ];
+
+  const throttledCursorUpdate = throttle((cursorPos) => {
+    sendMessage("CURSOR_UPDATE", {
+      userId: user._id,
+      cursorPos,
+      filePath: currentFile,
+      name: user.name,
+    });
+  }, 100);
+
+  const handleCodeChange = (update) => {
+    const newContent = update.state.doc.toString();
+    const cursorPos = update.state.selection.main.head;
+
+    // Update local state
+    setFileTree(prev => {
+      const newTree = JSON.parse(JSON.stringify(prev));
+      const parts = currentFile.split('/');
+      let current = newTree;
+
+      for (let i = 0; i < parts.length - 1; i++) {
+        current = current[parts[i]] = current[parts[i]] || {};
+      }
+
+      const fileName = parts[parts.length - 1];
+      current[fileName] = { file: { contents: newContent } };
+      return newTree;
+    });
+
+    // Broadcast changes
+    sendMessage('CODE_CHANGE', {
+      content: newContent,
+      filePath: currentFile,
+      cursorPos,
+      userId: user._id
+    });
+
+    // Typing indicators
+    sendMessage('TYPING_STATUS', { userId: user._id, isTyping: true });
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      sendMessage('TYPING_STATUS', { userId: user._id, isTyping: false });
+    }, 1000);
+  };
 
   // Auto-scroll to bottom whenever messages update
   useEffect(() => {
@@ -379,9 +566,26 @@ const Project = () => {
     updateFiles();
   }, [fileTree]); // Server restart nahi hoga, sirf file update hogi
 
+  // Clean up inactive cursors
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRemoteCursors((prev) => {
+        const now = Date.now();
+        const filtered = {};
+        Object.entries(prev).forEach(([userId, cursor]) => {
+          if (now - (cursor.lastActive || 0) < CURSOR_TIMEOUT) {
+            filtered[userId] = cursor;
+          }
+        });
+        return filtered;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <main className='h-screen w-screen flex bg-gray-950 text-white '>
-      <section className='left relative h-full flex flex-col max-w-70 bg-gray-800'>
+      <section className='left relative h-full flex flex-col w-[350px] min-w-[300px] max-w-[400px] bg-gray-800'>
         <div className="chats h-full flex flex-col">
           <header className='relative rounded-b flex items-center justify-between w-full bg-gray-950 p-3 px-4 h-12'>
             <div className=" w-full">
@@ -402,36 +606,34 @@ const Project = () => {
               className='message-box flex-grow flex flex-col gap-2 overflow-y-auto'
             >
               {messages.map((msg, index) => {
-  const isOutgoing = msg.sender._id === user._id;
-  const isAI = msg.sender._id === 'ai';
+                const isOutgoing = msg.sender._id === user._id;
+                const isAI = msg.sender._id === 'ai';
 
-  return (
-    <div
-      key={index}
-      className={`message flex flex-col rounded-lg p-2 ${
-        isAI ? 'max-w-full' : 'max-w-60'
-      } bg-gray-700 text-white ${
-        isOutgoing ? 'ml-auto' : 'self-start'
-      }`}
-    >
-      {!isOutgoing && (
-        <small
-          className='text-xs'
-          style={{ color: getColorForSender(msg.sender.name) }}
-        >
-          {msg.sender.name}
-        </small>
-      )}
-      <div className='text-sm'>
-        {isAI ? (
-          writeAiMessage(msg.message)
-        ) : (
-          <div className='max-w-60 overflow-clip'>{msg.message}</div>
-        )}
-      </div>
-    </div>
-  );
-})}
+                return (
+                  <div
+                    key={index}
+                    className={`message flex flex-col rounded-lg p-2 ${isAI ? 'max-w-full' : 'max-w-60'
+                      } bg-gray-700 text-white ${isOutgoing ? 'ml-auto' : 'self-start'
+                      }`}
+                  >
+                    {!isOutgoing && (
+                      <small
+                        className='text-xs'
+                        style={{ color: getColorForSender(msg.sender.name) }}
+                      >
+                        {msg.sender.name}
+                      </small>
+                    )}
+                    <div className='text-sm'>
+                      {isAI ? (
+                        writeAiMessage(msg.message)
+                      ) : (
+                        <div className='max-w-60 overflow-clip'>{msg.message}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -638,6 +840,18 @@ const Project = () => {
                   Run
                 </button>
 
+                <select
+                  value={selectedTheme}
+                  onChange={(e) => setSelectedTheme(e.target.value)}
+                  className="bg-gray-950 text-blue-500 p-1 rounded-lg cursor-pointer hover:bg-gray-700"
+                >
+                  {Object.keys(THEMES).map(themeName => (
+                    <option key={themeName} value={themeName}>
+                      {themeName.charAt(0).toUpperCase() + themeName.slice(1)}
+                    </option>
+                  ))}
+                </select>
+
                 <button
                   onClick={() => setIsPreviewPanelOpen(!isPreviewPanelOpen)}
                   className='cursor-pointer text-blue-500 text-xl bg-gray-950 rounded-lg hover:bg-gray-700 mr-1'
@@ -656,10 +870,10 @@ const Project = () => {
                 <div className="h-full w-full">
                   <CodeMirror
                     key={currentFile} // Ensures re-render on file change
-                    value={getFileContent(currentFile, fileTree) || ""}
+                    value={currentFile ? getFileContent(currentFile, fileTree) : ''}
+                    theme={THEMES[selectedTheme]}
+                    extensions={codeMirrorExtensions}
                     className=" w-full h-full"
-                    theme={dracula}
-                    extensions={[javascript()]}
                     height="100%"
                     onChange={(value) => {
                       setFileTree((prevFileTree) => {

@@ -57,6 +57,21 @@ io.on('connection', socket => {
         }
     });
 
+    // Collaborative cursor update relay
+    socket.on('CURSOR_UPDATE', data => {
+        socket.broadcast.to(socket.roomId).emit('CURSOR_UPDATE', data);
+    });
+
+    // Collaborative code change relay (if not present)
+    socket.on('CODE_CHANGE', data => {
+        socket.broadcast.to(socket.roomId).emit('CODE_CHANGE', data);
+    });
+
+    // Typing status relay (if not present)
+    socket.on('TYPING_STATUS', data => {
+        socket.broadcast.to(socket.roomId).emit('TYPING_STATUS', data);
+    });
+
     socket.on('disconnect', () => {
         console.log('User Disconnected');
         socket.leave(socket.roomId);

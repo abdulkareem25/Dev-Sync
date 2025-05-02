@@ -1,50 +1,77 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-
-.conversation-area::-webkit-scrollbar{
-    display: none;
+/* Your custom styles */
+.conversation-area::-webkit-scrollbar {
+  display: none;
 }
 
-.addCollaborators::-webkit-scrollbar{
-    display: none;
+.addCollaborators::-webkit-scrollbar {
+  display: none;
 }
 
-.message-box::-webkit-scrollbar{
-    display: none;
+.message-box::-webkit-scrollbar {
+  display: none;
 }
 
-.message-box{
-    scroll-behavior: smooth;
+.message-box {
+  scroll-behavior: smooth;
 }
 
-.ai-reply::-webkit-scrollbar{
-    display: none;
+.ai-reply::-webkit-scrollbar {
+  display: none;
 }
 
-.ai-reply pre::-webkit-scrollbar{
-    display: none;
+.ai-reply pre::-webkit-scrollbar {
+  display: none;
 }
-
 
 html::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
+
 .ai-reply p {
-    white-space: normal;
-    word-wrap: break-word;
-    margin: 0;
-  }
-  
-  /* For code blocks */
-  .ai-reply pre {
-    /* background: #111827 !important; */
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin: 0;
-    overflow-x: auto;
-  }
-  
-  .ai-reply code {
-    font-family: monospace;
-    white-space: pre;
-  }
+  white-space: normal;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+.ai-reply pre {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.ai-reply code {
+  font-family: monospace;
+  white-space: pre;
+}
+
+.tab::-webkit-scrollbar {
+  display: none;
+}
+
+.collaborator-cursor {
+  position: relative;
+  border-left: 2px solid;
+  margin-left: -1px;
+  height: 1em;
+}
+
+.collaborator-cursor::after {
+  content: attr(data-user);
+  position: absolute;
+  top: -1.8em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: white;
+  background: #222;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
