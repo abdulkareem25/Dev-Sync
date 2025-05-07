@@ -13,6 +13,8 @@ import { draculaInit } from "@uiw/codemirror-theme-dracula";
 import { debounce, throttle } from "lodash";
 import { EditorView, WidgetType, Decoration } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
+import { autocompletion } from "@codemirror/autocomplete";
+import { linter } from "@codemirror/lint";
 
 import React, { useState, useEffect, useContext, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -49,6 +51,77 @@ const THEMES = {
 
 const CURSOR_TIMEOUT = 2000; // 2 seconds
 
+const WriteAiMessage = React.memo(({ message }) => {
+  let content;
+  try {
+    const parsed = typeof message === 'string' ? JSON.parse(message) : message;
+    content = parsed.text || parsed; // Extract the 'text' property or use the parsed object
+  } catch {
+    content = message; // Fallback to the raw message if parsing fails
+  }
+
+  // Format the content for markdown rendering
+  const formattedContent = typeof content === 'object'
+    ? JSON.stringify(content, null, 2) // Format objects as JSON
+    : content;
+
+  return (
+    <div className="ai-reply bg-gray-800 rounded-lg p-4 text-sm leading-relaxed text-gray-300 shadow-md">
+      <Markdown
+        options={{
+          forceBlock: true,
+          overrides: {
+            code: {
+              component: ({ children, className }) => {
+                const language = className?.replace('lang-', '') || 'plaintext';
+                return (
+                  <pre className="bg-gray-900 text-gray-100 p-3 rounded-md overflow-auto">
+                    <code className={`language-${language}`}>{children}</code>
+                  </pre>
+                );
+              },
+            },
+            p: {
+              component: ({ children }) => (
+                <p className="mb-2 text-gray-300">{children}</p>
+              ),
+            },
+            h1: {
+              component: ({ children }) => (
+                <h1 className="text-lg font-bold text-gray-100 mb-2">{children}</h1>
+              ),
+            },
+            h2: {
+              component: ({ children }) => (
+                <h2 className="text-md font-semibold text-gray-200 mb-2">{children}</h2>
+              ),
+            },
+            ul: {
+              component: ({ children }) => (
+                <ul className="list-disc list-inside text-gray-300 mb-2">{children}</ul>
+              ),
+            },
+            ol: {
+              component: ({ children }) => (
+                <ol className="list-decimal list-inside text-gray-300 mb-2">{children}</ol>
+              ),
+            },
+            blockquote: {
+              component: ({ children }) => (
+                <blockquote className="border-l-4 border-blue-500 pl-4 text-gray-400 italic mb-2">
+                  {children}
+                </blockquote>
+              ),
+            },
+          },
+        }}
+      >
+        {formattedContent}
+      </Markdown>
+    </div>
+  );
+});
+
 const Project = () => {
   const location = useLocation()
   const { user } = useContext(UserContext)
@@ -62,7 +135,7 @@ const Project = () => {
   const [messages, setMessages] = useState([])
 
   const [fileTree, setFileTree] = useState({})
-  const [currentFile, setCurrentFile] = useState('index.js');
+  const [currentFile, setCurrentFile] = useState(null);
   const [openFiles, setOpenFiles] = useState([])
   const [openFolders, setOpenFolders] = useState([])
 
@@ -88,6 +161,29 @@ const Project = () => {
 
   const messageBoxRef = React.useRef(null)
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const deleteFile = (filePath) => {
+    if (window.confirm(`Are you sure you want to delete "${filePath}"?`)) {
+      setFileTree((prevFileTree) => {
+        const newTree = structuredClone(prevFileTree);
+        const parts = filePath.split("/");
+        let current = newTree;
+
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!current[parts[i]]) return prevFileTree; // File path invalid
+          current = current[parts[i]];
+        }
+
+        delete current[parts[parts.length - 1]]; // Delete the file
+        return newTree;
+      });
+
+      setOpenFiles((prevOpenFiles) => prevOpenFiles.filter((file) => file !== filePath));
+      if (currentFile === filePath) setCurrentFile(null); // Reset current file if deleted
+    }
+  };
+
   const renderFileTree = (tree = {}, path = "") => {
     return Object.keys(tree).map((file) => {
       const currentPath = path ? `${path}/${file}` : file;
@@ -104,6 +200,11 @@ const Project = () => {
                 )
               }
               className="folder-name text-lg flex cursor-pointer gap-2 hover:bg-gray-700 w-full p-2"
+              onContextMenu={(e) => {
+                e.preventDefault();
+                // Add context menu logic here
+                console.log("Context menu for folder:", currentPath);
+              }}
             >
               <i className="ri-folder-fill text-yellow-500"></i>
               <p
@@ -114,57 +215,56 @@ const Project = () => {
               </p>
             </button>
             {openFolders.includes(currentPath) && (
-              <div className>{renderFileTree(tree[file], currentPath)}</div>
+              <div className="pl-4">{renderFileTree(tree[file], currentPath)}</div>
             )}
           </div>
         );
       } else {
         return (
-          <button
-            key={currentPath}
-            onClick={() => {
-              setCurrentFile(currentPath);
-              setOpenFiles((prev) => [...new Set([...prev, currentPath])]);
+          <div key={currentPath} className="tree-element flex items-center gap-2 p-2 hover:bg-gray-700 w-full">
+            <button
+              onClick={() => {
+                setCurrentFile(currentPath);
+                setOpenFiles((prev) => [...new Set([...prev, currentPath])]);
 
-              // Ensure new files have valid structure
-              setFileTree((prevFileTree) => {
-                const newTree = JSON.parse(JSON.stringify(prevFileTree));
-                const parts = currentPath.split("/");
-                let current = newTree;
+                // Ensure new files have valid structure
+                setFileTree((prevFileTree) => {
+                  const newTree = JSON.parse(JSON.stringify(prevFileTree));
+                  const parts = currentPath.split("/");
+                  let current = newTree;
 
-                for (let i = 0; i < parts.length - 1; i++) {
-                  if (!current[parts[i]] || typeof current[parts[i]] !== "object") {
-                    current[parts[i]] = {}; // ✅ Ensure parent folder exists
+                  for (let i = 0; i < parts.length - 1; i++) {
+                    if (!current[parts[i]] || typeof current[parts[i]] !== "object") {
+                      current[parts[i]] = {}; // ✅ Ensure parent folder exists
+                    }
+                    current = current[parts[i]];
                   }
-                  current = current[parts[i]];
-                }
 
-                // ✅ Ensure file exists
-                if (!current[parts[parts.length - 1]]) {
-                  current[parts[parts.length - 1]] = { file: { contents: "" } };
-                }
+                  // ✅ Ensure file exists
+                  if (!current[parts[parts.length - 1]]) {
+                    current[parts[parts.length - 1]] = { file: { contents: "" } };
+                  }
 
-                return newTree;
-              });
-            }}
-            className="tree-element cursor-pointer p-2 flex items-center content-start gap-2 hover:bg-gray-700 w-full"
-          >
-            <i className="ri-file-line text-blue-500"></i>
-
-            {/* ✅ File Name with Ellipsis & Tooltip */}
-            <p
-              className="font-semibold text-lg truncate flex w-full overflow-hidden whitespace-nowrap"
-              title={file} // ✅ Hover par pura naam dikhane ke liye
+                  return newTree;
+                });
+              }}
+              className="flex-grow text-left text-white truncate"
+              title={file}
             >
-              {file}
-            </p>
-          </button>
-
+              <i className="ri-file-line text-blue-500"></i> {file}
+            </button>
+            <button
+              onClick={() => deleteFile(currentPath)}
+              className="text-red-500 hover:text-red-700"
+              title="Delete File"
+            >
+              <i className="ri-delete-bin-line"></i>
+            </button>
+          </div>
         );
       }
     });
   };
-
 
   const getFileContent = (path, tree) => {
     if (!tree || !path) return "";
@@ -295,48 +395,19 @@ const Project = () => {
   }
 
 
-  function send() {
-    const trimmedMessage = message.trim()
-    if (trimmedMessage === "") return
+  const send = (message) => {
+    const trimmedMessage = message.trim();
+    if (trimmedMessage === "") return;
 
     const outgoingMessage = {
       sender: { _id: user._id, name: user.name },
-      message: trimmedMessage
-    }
+      message: trimmedMessage,
+    };
 
-    sendMessage('project-message', outgoingMessage)
-    setMessages(prevMessages => [...prevMessages, outgoingMessage])
-    setMessage("")
+    sendMessage("project-message", outgoingMessage);
+    setMessages((prevMessages) => [...prevMessages, outgoingMessage]);
     saveMessageToDB(outgoingMessage);
-  }
-
-
-  const writeAiMessage = (message) => {
-    let content;
-    try {
-      const parsed = typeof message === 'string' ? JSON.parse(message) : message;
-      content = typeof parsed.text === 'object'
-        ? JSON.stringify(parsed.text, null, 2)
-        : parsed.text || parsed;
-    } catch {
-      content = typeof message === 'object'
-        ? JSON.stringify(message, null, 2)
-        : message;
-    }
-
-    // Check for structured content patterns
-    const isStructured = /(\n|{|}|\[|\]|`|\\|\/)/.test(content);
-
-    return (
-      <div className={`ai-reply bg-gray-950 rounded p-2 ${isStructured ? 'overflow-auto' : 'overflow-visible'
-        }`}>
-        <Markdown>
-          {isStructured ? `\`\`\`\n${content}\n\`\`\`` : content}
-        </Markdown>
-      </div>
-    );
   };
-
 
   useEffect(() => {
     initializeSocket(project._id)
@@ -449,7 +520,7 @@ const Project = () => {
       return Decoration.set(decorations, true);
     });
   };
-  
+
 
   class CursorWidget extends WidgetType {
     constructor(userId, color, name) {
@@ -492,8 +563,11 @@ const Project = () => {
       if (update.docChanged || update.selectionSet) {
         handleCodeChange(update);
       }
-    })
-  ];
+    }),
+    // Add linting and intelligent code completion if available
+    linter ? linter() : null,
+    autocompletion ? autocompletion() : null,
+  ].filter(Boolean); // Filter out null values to avoid errors
 
   const throttledCursorUpdate = throttle((cursorPos) => {
     sendMessage("CURSOR_UPDATE", {
@@ -584,132 +658,223 @@ const Project = () => {
   }, []);
 
   return (
-    <main className='h-screen w-screen flex bg-gray-950 text-white '>
-      <section className='left relative h-full flex flex-col w-[350px] min-w-[300px] max-w-[400px] bg-gray-800'>
+    <main className="h-screen w-screen flex bg-gray-950 text-white">
+      <section className="left relative h-full flex flex-col w-[350px] min-w-[300px] max-w-[400px] bg-gray-800 shadow-lg">
         <div className="chats h-full flex flex-col">
-          <header className='relative rounded-b flex items-center justify-between w-full bg-gray-950 p-3 px-4 h-12'>
-            <div className=" w-full">
-              <h2 className="text-white text-lg font-semibold whitespace-nowrap overflow-hidden max-w-[300px] cursor-pointer"
-                title={project.name}>
+          <header className="relative flex items-center justify-between w-full bg-gray-950 p-4 h-14 shadow-md">
+            <div className="w-full">
+              <h2
+                className="text-white text-lg font-semibold truncate cursor-pointer"
+                title={project.name}
+              >
                 {project.name}
               </h2>
             </div>
             <button
               onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
-              className='cursor-pointer text-blue-500 text-xl'>
+              className="cursor-pointer text-blue-500 text-2xl hover:text-blue-400 transition-colors"
+            >
               <i className="ri-group-fill"></i>
             </button>
           </header>
-          <div className='conversation-area flex flex-grow flex-col max-w-70 p-2 overflow-y-auto'>
+          <div className="conversation-area flex flex-grow flex-col p-4 overflow-y-auto">
             <div
               ref={messageBoxRef}
-              className='message-box flex-grow flex flex-col gap-2 overflow-y-auto'
+              className="message-box flex-grow flex flex-col gap-4 overflow-y-auto"
             >
               {messages.map((msg, index) => {
                 const isOutgoing = msg.sender._id === user._id;
-                const isAI = msg.sender._id === 'ai';
+                const isAI = msg.sender._id === "ai";
+                const timestamp = new Date(msg.createdAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
 
                 return (
                   <div
                     key={index}
-                    className={`message flex flex-col rounded-lg p-2 ${isAI ? 'max-w-full' : 'max-w-60'
-                      } bg-gray-700 text-white ${isOutgoing ? 'ml-auto' : 'self-start'
+                    className={`message flex flex-col rounded-lg p-2 shadow-md ${isAI ? "max-w-full" : "max-w-[70%]"
+                      } ${isOutgoing
+                        ? "ml-auto bg-blue-600 text-white"
+                        : "self-start bg-gray-700 text-gray-200"
                       }`}
                   >
-                    {!isOutgoing && (
-                      <small
-                        className='text-xs'
-                        style={{ color: getColorForSender(msg.sender.name) }}
-                      >
-                        {msg.sender.name}
-                      </small>
-                    )}
-                    <div className='text-sm'>
-                      {isAI ? (
-                        writeAiMessage(msg.message)
-                      ) : (
-                        <div className='max-w-60 overflow-clip'>{msg.message}</div>
+                    <div className="flex justify-between items-center">
+                      {!isOutgoing && (
+                        <small
+                          className="text-xs font-medium"
+                          style={{ color: getColorForSender(msg.sender.name) }}
+                        >
+                          {msg.sender.name}
+                        </small>
                       )}
+                    </div>
+                    <div className="text-sm">
+                      {isAI ? (
+                        <WriteAiMessage message={msg.message} />
+                      ) : (
+                        <div className="break-words">{msg.message}</div>
+                      )}
+                    </div>
+                    <div
+                      className={`text-xs text-right ${isOutgoing ? "text-gray-300" : "text-gray-400"
+                        }`}
+                    >
+                      {timestamp}
                     </div>
                   </div>
                 );
               })}
             </div>
           </div>
-
-          <div className='inputField w-full flex items-center bg-gray-950 p-2 rounded-b'>
-            <input
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && send()}
-              className='p-2 px-4 border-none flex-grow outline-none bg-gray-700 text-white rounded-lg'
-              type="text" placeholder='Type a message...' />
+          <div className="inputField w-full flex items-end bg-gray-950 p-3 rounded-b shadow-md flex-shrink-0 gap-2">
+            <div className="flex-grow">
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (message.trim()) {
+                      send(message.trim());
+                      setMessage("");
+                    }
+                  }
+                }}
+                // ChatGPT style classes:
+                className="
+        w-full
+        p-3
+        bg-gray-800
+        text-white
+        rounded-lg
+        placeholder-gray-400
+        outline-none
+        focus:border-blue-500
+        focus:ring-2
+        focus:ring-blue-500
+        resize-none
+        overflow-y-auto
+        scrollbar-thin
+        scrollbar-thumb-gray-600
+        scrollbar-track-gray-800
+        transition-all
+        flex-grow
+        max-h-36
+      "
+                placeholder="Type a message..."
+                rows={1}
+                style={{ height: "auto" }}
+                onInput={(e) => {
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+              />
+            </div>
             <button
-              onClick={send}
-              className='text-blue-500 text-2xl px-2 cursor-pointer'>
-              <i className='ri-send-plane-fill'></i>
+              onClick={() => {
+                if (message.trim()) {
+                  send(message.trim());
+                  setMessage("");
+                }
+              }}
+              className="
+      flex-shrink-0
+      bg-blue-500
+      hover:bg-blue-600
+      text-white
+      p-3
+      rounded-lg
+      transition-colors
+      focus:outline-none
+      focus:ring-2
+      focus:ring-blue-500
+    "
+              title="Send Message"
+              aria-label="Send Message"
+            >
+              <i className="ri-send-plane-fill text-xl"></i>
             </button>
           </div>
-        </div>
 
-        <div className={`sidePanel flex flex-col gap-2 h-full w-full absolute bg-gray-800 transition-all ${isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <header className='rounded-b flex justify-between items-center p-3 px-4 bg-gray-950 '>
-            <div className='flex gap-1'>
-              <i className={project.users.length <= 1 ? "ri-user-fill text-xl text-blue-500" : "ri-group-fill text-blue-500 text-xl"}></i>
-              <h2 className='text-white text-lg font-semibold items-center'>
-                {project.users.length <= 1 ? `Collaborator :` : `Collaborators :`} {project.users.length}
+        </div>
+        <div
+          className={`sidePanel flex flex-col gap-4 h-full w-full absolute bg-gray-800 shadow-lg transition-transform ${isSidePanelOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+        >
+          <header className="flex justify-between items-center p-4 bg-gray-950 shadow-md h-14">
+            <div className="flex gap-2 items-center ml-2">
+              <i
+                className={`${project.users.length <= 1
+                  ? "ri-user-fill"
+                  : "ri-group-fill"
+                  } text-2xl text-blue-500`}
+              ></i>
+              <h2 className="text-white text-xl font-semibold">
+                {project.users.length <= 1
+                  ? `Collaborator:`
+                  : `Collaborators:`}{" "}
+                {project.users.length}
               </h2>
             </div>
-            <div className="buttons flex justify-end gap-3">
+            <div className="buttons flex gap-3">
               <button
                 onClick={() => setIsModalOpen(!isModalOpen)}
-                className='addCollaborator text-xl text-blue-500 cursor-pointer'>
+                className="text-2xl text-blue-500 hover:text-blue-400 transition-colors"
+              >
                 <i className="ri-user-add-fill"></i>
               </button>
               <button
                 onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
-                className='text-xl cursor-pointer'>
-                <i className="ri-close-large-line text-blue-500"></i>
+                className="text-3xl text-blue-500 hover:text-blue-400 transition-colors"
+              >
+                <i className="ri-close-line"></i>
               </button>
             </div>
           </header>
-
-          <div className="users flex flex-col gap-2 ">
-            {project.users?.filter(user => user?._id).map(user => (
+          <div className="users flex flex-col gap-3 px-3">
+            {project.users?.map((user) => (
               <div
                 key={user._id}
-                className='user flex gap-2 items-center bg-gray-900 rounded-lg mx-1 hover:bg-gray-700 cursor-pointer'
+                className="user flex items-center gap-3 bg-gray-900 p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
               >
-                <div className='profile rounded-full p-2 py-1 m-1 text-xl text-blue-500'>
+                <div className="profile rounded-full px-2 py-1 text-xl text-blue-500 bg-gray-800">
                   <i className="ri-user-fill"></i>
                 </div>
-                <div className="userName text-white font-semibold text-xl">
-                  {user.name} {user._id === project.admin?._id && <span className="text-yellow-600 text-sm">(admin)</span>}
-                  <div className="email text-gray-400 text-xs pb-1">
+                <div className="userName text-white font-semibold">
+                  {user.name}{" "}
+                  {user._id === project.admin?._id && (
+                    <span className="text-yellow-500 text-sm">(admin)</span>
+                  )}
+                  <div className="email text-gray-400 text-xs">
                     {user.email}
                   </div>
                 </div>
               </div>
             ))}
           </div>
-
         </div>
       </section>
-
       <section className="right flex flex-grow h-full overflow-hidden">
-        <div className="explorer bg-gray-900 h-full w-48 flex flex-col border-r border-gray-700">
-          <div className="flex items-center justify-around border-b border-gray-700 h-12">
-            <div>EXPLORER</div>
-            <div className="text-blue-500 text-xl cursor-pointer flex gap-2">
-              <button onClick={() => setIsCreatingFile(true)} className="hover:text-blue-300">
+        <div className="explorer bg-gray-900 h-full w-56 flex flex-col border-r border-gray-700 shadow-lg">
+          <div className="flex items-center justify-between border-b border-gray-700 h-14 px-4">
+            <div className="text-white font-semibold">EXPLORER</div>
+            <div className="text-blue-500 text-xl flex gap-3">
+              <button
+                onClick={() => setIsCreatingFile(true)}
+                className="hover:text-blue-400 transition-colors"
+              >
                 <i className="ri-file-add-line"></i>
               </button>
-              {/* <button onClick={() => setIsCreatingFolder(true)} className="hover:text-blue-300">
+              {/* <button
+                onClick={() => setIsCreatingFolder(true)}
+                className="hover:text-blue-400 transition-colors"
+              >
                 <i className="ri-folder-add-line"></i>
               </button> */}
             </div>
           </div>
-          <div className="file-tree w-full">
+          <div className="file-tree w-full p-4">
             {/* Input for New File Name */}
             {isCreatingFile && (
               <input
@@ -718,35 +883,17 @@ const Project = () => {
                 onChange={(e) => setNewFileName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreateFile()}
                 onBlur={() => setIsCreatingFile(false)}
-                className="border p-2 rounded w-44 m-2 outline-none"
+                className="border p-2 rounded w-full outline-none bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 transition"
                 placeholder="Enter file name..."
                 autoFocus
               />
             )}
-
-            {/* Input for New Folder Name */}
-            {/* {isCreatingFolder && (
-              <input
-                type="text"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
-                onBlur={() => setIsCreatingFolder(false)}
-                className="border p-2 rounded w-44 m-2 outline-none"
-                placeholder="Enter folder name..."
-                autoFocus
-              />
-            )} */}
-
             {/* File Tree Rendering */}
-            <div className="">{renderFileTree(fileTree)}</div>
+            <div>{renderFileTree(fileTree)}</div>
           </div>
         </div>
-
         <div className="editor flex-grow h-full w-0 relative">
-
-
-          {/* {currentFile && ( */}
+          {/* Editor and Preview Panel */}
           <div className="code-editor flex flex-col h-full bg-gray-800 w-full">
 
 
@@ -901,8 +1048,25 @@ const Project = () => {
                 </div>
               ) : (
                 <div className="h-full w-full">
-                  <div className="flex items-center justify-center h-full w-full text-white text-lg">
-                    Select a file to edit
+                  <div className="flex flex-col items-center justify-center h-full w-full text-white text-lg bg-gray-850">
+                    <div className="text-center">
+                      <h1 className="text-2xl font-bold text-blue-500 mb-4">Welcome to Your Project</h1>
+                      <p className="text-gray-400 mb-6">Select a file from the explorer to start editing.</p>
+                      <div className="flex gap-4 justify-center">
+                        <button
+                          onClick={() => setIsCreatingFile(true)}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                        >
+                          Create New File
+                        </button>
+                        {/* <button
+                          onClick={() => setIsCreatingFolder(true)}
+                          className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg"
+                        >
+                          Create New Folder
+                        </button> */}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -931,41 +1095,80 @@ const Project = () => {
       </section>
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-none">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-[90%] max-w-md ">
-            <h2 className="text-white text-xl font-semibold mb-4 text-center">Select a Collaborator</h2>
-            <div className="addCollaborators max-h-50 overflow-y-auto flex flex-col gap-1">
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75"
+          onClick={() => setSearchQuery("")} // Reset search query on outside click
+        >
+          <div
+            className="bg-gray-800 p-6 rounded-lg shadow-lg w-[90%] max-w-md"
+            onClick={(e) => e.stopPropagation()} // Prevent resetting when clicking inside the modal
+          >
+            <h2 className="text-white text-xl font-semibold mb-4 text-center">
+              Select a Collaborator
+            </h2>
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              className="ml-[10%] w-[80%] p-2 mb-4 rounded bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none "
+              onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
+              value={searchQuery} // Bind input value to state
+            />
+            <div className="addCollaborators max-h-60 overflow-y-auto flex flex-col gap-3">
               {users
-                .filter(user => !project.users.some(projectUser => projectUser._id === user._id))
-                .map(user => (
-                  <div
-                    key={user.id}
-                    className={`user flex gap-2 items-center rounded-lg mx-1 cursor-pointer 
-                      ${Array.from(selectedUserIds).includes(user._id) ? 'bg-gray-700 hover:bg-gray-700/70' : 'bg-gray-900 hover:bg-gray-650'}`}
-                    onClick={() => handleUserClick(user._id)}
-                  >
-                    <div className='profile rounded-full p-2 py-1 m-1 text-xl text-blue-500'>
-                      <i className="ri-user-fill"></i>
-                    </div>
-                    <div className="userName text-white font-semibold text-xl">
-                      {user.name}
-                      <div className="email text-gray-400 text-xs pb-1">
-                        {user.email}
+                .filter(
+                  (user) =>
+                    !project.users.some(
+                      (projectUser) => projectUser._id === user._id
+                    ) &&
+                    (user.name.toLowerCase().includes(searchQuery) ||
+                      user.email.toLowerCase().includes(searchQuery))
+                ).length > 0 ? (
+                users
+                  .filter(
+                    (user) =>
+                      !project.users.some(
+                        (projectUser) => projectUser._id === user._id
+                      ) &&
+                      (user.name.toLowerCase().includes(searchQuery) ||
+                        user.email.toLowerCase().includes(searchQuery))
+                  )
+                  .map((user) => (
+                    <div
+                      key={user.id}
+                      className={`user flex items-center gap-3 p-3 rounded-lg cursor-pointer ${Array.from(selectedUserIds).includes(user._id)
+                        ? "bg-gray-700 hover:bg-gray-600"
+                        : "bg-gray-900 hover:bg-gray-800"
+                        } transition-colors`}
+                      onClick={() => handleUserClick(user._id)}
+                    >
+                      <div className="profile rounded-full px-2 py-1 text-xl text-blue-500 bg-gray-800">
+                        <i className="ri-user-fill"></i>
+                      </div>
+                      <div className="userName text-white font-semibold">
+                        {user.name}
+                        <div className="email text-gray-400 text-xs">
+                          {user.email}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+              ) : (
+                <div className="text-center text-gray-400">
+                  No users available to add as collaborators.
+                </div>
+              )}
             </div>
-            <div className="flex justify-between gap-4 mt-4 mx-2">
+            <div className="flex justify-between gap-4 mt-4">
               <button
                 onClick={() => setIsModalOpen(!isModalOpen)}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
               >
                 Close
               </button>
               <button
                 onClick={addCollaborators}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                disabled={selectedUserIds.size === 0}
               >
                 Add Collaborator
               </button>
@@ -975,6 +1178,6 @@ const Project = () => {
       )}
     </main>
   );
-}
+};
 
-export default Project
+export default Project;
