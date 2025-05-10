@@ -66,46 +66,60 @@ const WriteAiMessage = React.memo(({ message }) => {
     : content;
 
   return (
-    <div className="ai-reply bg-gray-800 rounded-lg p-4 text-sm leading-relaxed text-gray-300 shadow-md">
+    <div className="ai-reply bg-gray-800 rounded-lg p-4 text-sm leading-relaxed text-gray-300 shadow-md border border-gray-700">
       <Markdown
         options={{
-          forceBlock: true,
           overrides: {
+            // code blocks
             code: {
               component: ({ children, className }) => {
                 const language = className?.replace('lang-', '') || 'plaintext';
                 return (
-                  <pre className="bg-gray-900 text-gray-100 p-3 rounded-md overflow-auto">
+                  <div className="bg-gray-900 text-gray-100 p-3 rounded-md overflow-auto shadow-inner">
                     <code className={`language-${language}`}>{children}</code>
-                  </pre>
+                  </div>
                 );
               },
             },
+            // normal paragraphs → inline spans
             p: {
               component: ({ children }) => (
-                <p className="mb-2 text-gray-300">{children}</p>
+                <span className="text-gray-300">{children}</span>
               ),
             },
+            // top-level headings still blocks
             h1: {
               component: ({ children }) => (
                 <h1 className="text-lg font-bold text-gray-100 mb-2">{children}</h1>
               ),
             },
+            // “sub-headings” inside lists as inline spans
             h2: {
               component: ({ children }) => (
-                <h2 className="text-md font-semibold text-gray-200 mb-2">{children}</h2>
+                <span className="font-semibold text-gray-200">{children}</span>
               ),
             },
+            // unordered list
             ul: {
               component: ({ children }) => (
-                <ul className="list-disc list-inside text-gray-300 mb-2">{children}</ul>
+                <ul className="list-disc list-inside text-gray-300 mb-2 pl-5">{children}</ul>
               ),
             },
+            // ordered list with padding
             ol: {
               component: ({ children }) => (
-                <ol className="list-decimal list-inside text-gray-300 mb-2">{children}</ol>
+                <ol className="list-decimal list-inside text-gray-300 mb-2 pl-2.5">
+                  {children}
+                </ol>
               ),
             },
+            // list items
+            li: {
+              component: ({ children }) => (
+                <li className="mb-1 text-gray-300">{children}</li>
+              ),
+            },
+            // blockquotes
             blockquote: {
               component: ({ children }) => (
                 <blockquote className="border-l-4 border-blue-500 pl-4 text-gray-400 italic mb-2">
@@ -199,7 +213,7 @@ const Project = () => {
                     : [...prev, currentPath]
                 )
               }
-              className="folder-name text-lg flex cursor-pointer gap-2 hover:bg-gray-700 w-full p-2"
+              className="folder-name text-lg flex cursor-pointer gap-2 hover:bg-gray-700 w-full p-2 transition-all duration-200"
               onContextMenu={(e) => {
                 e.preventDefault();
                 // Add context menu logic here
@@ -221,7 +235,7 @@ const Project = () => {
         );
       } else {
         return (
-          <div key={currentPath} className="tree-element flex items-center gap-2 p-2 hover:bg-gray-700 w-full">
+          <div key={currentPath} className="tree-element flex items-center gap-2 p-2 hover:bg-gray-700 w-full transition-all duration-200">
             <button
               onClick={() => {
                 setCurrentFile(currentPath);
@@ -255,7 +269,7 @@ const Project = () => {
             </button>
             <button
               onClick={() => deleteFile(currentPath)}
-              className="text-red-500 hover:text-red-700"
+              className="text-red-500 hover:text-red-700 transition-all duration-200"
               title="Delete File"
             >
               <i className="ri-delete-bin-line"></i>
@@ -461,7 +475,7 @@ const Project = () => {
         setUsers(res.data.users)
       })
       .catch(err => {
-        console.log(err)
+        console.log(err);
       })
 
     // Listen for remote changes
@@ -692,7 +706,7 @@ const Project = () => {
 
                 return (
                   <div
-                    key={index}
+                    key={msg._id || index} // Ensure unique key
                     className={`message flex flex-col rounded-lg p-2 shadow-md ${isAI ? "max-w-full" : "max-w-[70%]"
                       } ${isOutgoing
                         ? "ml-auto bg-blue-600 text-white"
@@ -727,76 +741,85 @@ const Project = () => {
               })}
             </div>
           </div>
-          <div className="inputField w-full flex items-end bg-gray-950 p-3 rounded-b shadow-md flex-shrink-0 gap-2">
+          <div className="inputField w-full flex items-center bg-[#0f1115] p-2 gap-1 rounded-b shadow-md">
+            {/* ➕ attachment button */}
+            {/* <button
+          className="text-gray-400 text-2xl p-2 hover:bg-gray-700 rounded-full transition-colors"
+          title="Add attachment"
+        >
+          <i className="ri-add-line"></i>
+        </button> */}
+
+            {/* 😊 emoji picker button */}
+            {/* <button
+          className="text-gray-400 text-2xl p-2 hover:bg-gray-700 rounded-full transition-colors"
+          title="Insert emoji"
+        >
+          <i className="ri-emotion-line"></i>
+        </button> */}
+
+            {/* 📥 expanding textarea with scrollbar */}
             <div className="flex-grow">
               <textarea
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                onChange={e => setMessage(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     if (message.trim()) {
                       send(message.trim());
-                      setMessage("");
+                      setMessage('');
+                      e.target.style.height = 'auto'; // Reset height after sending
                     }
                   }
                 }}
-                // ChatGPT style classes:
-                className="
-        w-full
-        p-3
-        bg-gray-800
-        text-white
-        rounded-lg
-        placeholder-gray-400
-        outline-none
-        focus:border-blue-500
-        focus:ring-2
-        focus:ring-blue-500
-        resize-none
-        overflow-y-auto
-        scrollbar-thin
-        scrollbar-thumb-gray-600
-        scrollbar-track-gray-800
-        transition-all
-        flex-grow
-        max-h-36
-      "
-                placeholder="Type a message..."
-                rows={1}
-                style={{ height: "auto" }}
-                onInput={(e) => {
-                  e.target.style.height = "auto";
+                onInput={e => {
+                  e.target.style.height = 'auto';
                   e.target.style.height = `${e.target.scrollHeight}px`;
                 }}
+                placeholder="Type a message..."
+                rows={1}
+                className={`
+                    w-full
+                    bg-gray-800
+                    text-white
+                    placeholder-gray-500
+                    rounded
+                    outline-none
+                    resize-none
+                    p-2
+                    min-h-[40px]
+                    max-h-40
+                    overflow-y-auto
+                    [&::-webkit-scrollbar]:[width:2.5px]
+                  [&::-webkit-scrollbar-thumb]:bg-blue-200
+                  [&::-webkit-scrollbar-track]:bg-blue-800
+                    [&::-webkit-scrollbar-thumb]:rounded-full
+                    transition-all
+                    focus:outline-none
+                    focus:ring-2
+                    focus:ring-blue-500
+                `}
               />
             </div>
+
+            {/* ▶️ green send button */}
             <button
               onClick={() => {
                 if (message.trim()) {
                   send(message.trim());
-                  setMessage("");
+                  setMessage('');
+                  const textarea = document.querySelector('textarea'); // Select the textarea
+                  if (textarea) textarea.style.height = 'auto'; // Reset height after sending
                 }
               }}
-              className="
-      flex-shrink-0
-      bg-blue-500
-      hover:bg-blue-600
-      text-white
-      p-3
-      rounded-lg
-      transition-colors
-      focus:outline-none
-      focus:ring-2
-      focus:ring-blue-500
-    "
+              className="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Send Message"
               aria-label="Send Message"
             >
-              <i className="ri-send-plane-fill text-xl"></i>
+              <i className="ri-send-plane-fill text-2xl"></i>
             </button>
           </div>
-
         </div>
         <div
           className={`sidePanel flex flex-col gap-4 h-full w-full absolute bg-gray-800 shadow-lg transition-transform ${isSidePanelOpen ? "translate-x-0" : "-translate-x-full"
@@ -834,10 +857,7 @@ const Project = () => {
           </header>
           <div className="users flex flex-col gap-3 px-3">
             {project.users?.map((user) => (
-              <div
-                key={user._id}
-                className="user flex items-center gap-3 bg-gray-900 p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
-              >
+              <div key={user._id} className="user flex items-center gap-3 bg-gray-900 p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">
                 <div className="profile rounded-full px-2 py-1 text-xl text-blue-500 bg-gray-800">
                   <i className="ri-user-fill"></i>
                 </div>
@@ -899,13 +919,17 @@ const Project = () => {
 
             {/* Tabs Section */}
             <div className="top h-12 min-h-12 pr-1 flex justify-between w-full bg-gray-900 border-b border-gray-700">
-              <div className="tab flex flex-row overflow-y-auto">
-                {openFiles.map((file) => (
-                  <div key={file} className="header flex items-center hover:bg-gray-800 border-r border-gray-700 whitespace-nowrap px-2 gap-2">
+              <div className="tab flex flex-row overflow-y-auto gap-2">
+                {openFiles.map((file, index) => (
+                  <div
+                    key={`${file}-${index}`}
+                    className={`header flex items-center px-4 py-2 gap-2 rounded-t-lg border-b-2 ${currentFile === file ? "border-blue-500 bg-gray-800" : "border-transparent hover:bg-gray-700"} transition-all duration-200`}
+                  >
                     <button
                       onClick={() => setCurrentFile(file)}
-                      className=" text-white"
+                      className="text-white flex items-center gap-2"
                     >
+                      <i className="ri-file-line text-blue-500"></i>
                       <p className="font-semibold text-lg">{file}</p>
                     </button>
                     <button
@@ -916,7 +940,7 @@ const Project = () => {
                           setCurrentFile(updatedFiles.length > 0 ? updatedFiles[0] : null);
                         }
                       }}
-                      className="text-xl cursor-pointer  text-blue-500"
+                      className="text-xl cursor-pointer text-blue-500 hover:text-red-500 transition-all duration-200"
                     >
                       <i className="ri-close-line"></i>
                     </button>
@@ -945,7 +969,7 @@ const Project = () => {
                     setIsPreviewPanelOpen(!isPreviewPanelOpen); // Open preview panel after autoSave
                   }}
 
-                  className="text-xl text-blue-500 px-4 cursor-pointer bg-gray-950 rounded-lg hover:bg-gray-700"
+                  className="text-xl text-blue-500 px-4 cursor-pointer bg-gray-950 rounded-lg hover:bg-gray-700 transition-all duration-200"
                 >
                   {isInstalling ? "Installing..." : "Install"}
                 </button>
@@ -982,7 +1006,7 @@ const Project = () => {
                     });
                   }}
 
-                  className="text-xl text-blue-500 px-4 cursor-pointer bg-gray-950 rounded-lg hover:bg-gray-700"
+                  className="text-xl text-blue-500 px-4 cursor-pointer bg-gray-950 rounded-lg hover:bg-gray-700 transition-all duration-200"
                 >
                   Run
                 </button>
@@ -990,7 +1014,7 @@ const Project = () => {
                 <select
                   value={selectedTheme}
                   onChange={(e) => setSelectedTheme(e.target.value)}
-                  className="bg-gray-950 text-blue-500 p-1 rounded-lg cursor-pointer hover:bg-gray-700"
+                  className="bg-gray-950 text-blue-500 p-1 rounded-lg cursor-pointer hover:bg-gray-700 transition-all duration-200"
                 >
                   {Object.keys(THEMES).map(themeName => (
                     <option key={themeName} value={themeName}>
@@ -1001,7 +1025,7 @@ const Project = () => {
 
                 <button
                   onClick={() => setIsPreviewPanelOpen(!isPreviewPanelOpen)}
-                  className='cursor-pointer text-blue-500 text-xl bg-gray-950 rounded-lg hover:bg-gray-700 mr-1'
+                  className='cursor-pointer text-blue-500 text-xl bg-gray-950 rounded-lg hover:bg-gray-700 transition-all duration-200'
                   title="preview">
                   <i className="ri-arrow-up-s-line p-2"></i>
                 </button>
@@ -1074,8 +1098,8 @@ const Project = () => {
           </div>
           {/* <button onClick={() => setReloadKey(prev => prev + 1)}>Reload</button> */}
           {iframeUrl && webContainer && (
-            <div className={`preview h-full w-full box-border max-w-full flex flex-grow flex-col items-center bg-gray-900 absolute transition-all ${isPreviewPanelOpen ? 'translate-y-0' : '-translate-y-full'}`}>
-              <div className="header h-12 min-h-12 px-1 flex justify-around w-full bg-gray-900 border-b border-gray-700">
+            <div className={`preview h-full w-full box-border max-w-full flex flex-grow flex-col items-center bg-gray-900 absolute transition-transform duration-300 ${isPreviewPanelOpen ? 'translate-y-0' : '-translate-y-full'}`}>
+              <div className="header h-12 min-h-12 px-1 flex justify-between w-full bg-gray-900 border-b border-gray-700">
                 <input type="text"
                   onChange={(e) => setIframeUrl(e.target.value)}
                   value={iframeUrl}
@@ -1083,7 +1107,7 @@ const Project = () => {
                 />
                 <button
                   onClick={() => setIsPreviewPanelOpen(!isPreviewPanelOpen)}
-                  className='cursor-pointer text-blue-500 text-xl m-1 bg-gray-950 rounded-lg hover:bg-gray-700 p-2'>
+                  className='cursor-pointer text-blue-500 text-xl m-1 bg-gray-950 rounded-lg hover:bg-gray-700 p-2 transition-all duration-200'>
                   <i className="ri-arrow-down-s-line text-blue-500"></i>
                 </button>
               </div>
@@ -1134,7 +1158,7 @@ const Project = () => {
                   )
                   .map((user) => (
                     <div
-                      key={user.id}
+                      key={user._id} // Ensure unique key
                       className={`user flex items-center gap-3 p-3 rounded-lg cursor-pointer ${Array.from(selectedUserIds).includes(user._id)
                         ? "bg-gray-700 hover:bg-gray-600"
                         : "bg-gray-900 hover:bg-gray-800"
