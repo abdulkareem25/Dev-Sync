@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 const corsOptions = {
   origin: 'https://ai-enhanced-collaboration-platform-for-8srm.onrender.com', // Replace with your frontend URL
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cross-Origin-Opener-Policy', 'Cross-Origin-Embedder-Policy'], // Added required headers
 };
 
 app.use(cors(corsOptions));
