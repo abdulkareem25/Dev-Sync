@@ -14,6 +14,13 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Add required headers for crossOriginIsolated
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  next();
+});
+
 app.use(express.json());
 
 mongoose.connect('mongodb://localhost:27017/yourdbname', {
