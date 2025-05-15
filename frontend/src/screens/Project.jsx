@@ -152,11 +152,13 @@ const WriteAiMessage = React.memo(({ message }) => {
             ol: { component: ({ children }) => <ol className="list-decimal list-inside space-y-1.5 mb-4 pl-4">{children}</ol> },
             li: { component: ({ children }) => <li className="text-gray-300 pl-2">{children}</li> },
             // Blockquotes with updated styling
-            blockquote: { component: ({ children }) => (
-              <blockquote className="border-l-4 border-green-500 pl-4 text-gray-400 italic my-4 bg-gray-700/20 py-2 rounded-r">
-                {children}
-              </blockquote>
-            )},
+            blockquote: {
+              component: ({ children }) => (
+                <blockquote className="border-l-4 border-green-500 pl-4 text-gray-400 italic my-4 bg-gray-700/20 py-2 rounded-r">
+                  {children}
+                </blockquote>
+              )
+            },
             // Tables support
             table: { component: ({ children }) => <table className="w-full my-4 bg-gray-700/20 rounded-lg overflow-hidden">{children}</table> },
             th: { component: ({ children }) => <th className="px-4 py-2 bg-gray-800 text-left text-gray-300 border-b border-gray-600">{children}</th> },
@@ -238,87 +240,109 @@ const Project = () => {
   };
 
   const renderFileTree = (tree = {}, path = "") => {
-    return Object.keys(tree).map((file) => {
-      const currentPath = path ? `${path}/${file}` : file;
-      const ext = file.split('.').pop().toLowerCase();
-      const icon = fileIcons[ext] || fileIcons.default;
-
-      if (typeof tree[file] === "object" && !tree[file].file) {
-        return (
-          <div key={currentPath} className="folder">
-            <button
-              onClick={() =>
-                setOpenFolders((prev) =>
-                  prev.includes(currentPath)
-                    ? prev.filter((f) => f !== currentPath)
-                    : [...prev, currentPath]
-                )
-              }
-              className="folder-name text-lg flex cursor-pointer gap-2 hover:bg-gray-700 w-full p-2 transition-all duration-200"
-              onContextMenu={(e) => {
-                e.preventDefault();
-                // Add context menu logic here
-                console.log("Context menu for folder:", currentPath);
-              }}
-            >
-              <i className="ri-folder-fill text-yellow-500"></i>
-              <p
-                className="font-semibold text-lg truncate w-full flex overflow-hidden whitespace-nowrap"
-                title={file}
-              >
-                {file}
-              </p>
-            </button>
-            {openFolders.includes(currentPath) && (
-              <div className="pl-4">{renderFileTree(tree[file], currentPath)}</div>
-            )}
+    return (
+      <>
+        {isCreatingFile && (
+          <div className="file-creation-ui p-2 mb-2">
+            <input
+              type="text"
+              autoFocus
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleFileCreate()}
+              onBlur={handleFileCreate}
+              placeholder="New file name"
+              className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg 
+                      focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            {/* <div className="mt-1 text-xs text-gray-400">
+              Allowed extensions: {allowedExtensions.join(', ')}
+            </div> */}
           </div>
-        );
-      } else {
-        return (
-          <div key={currentPath} className="tree-element flex items-center gap-2 p-2 hover:bg-gray-700 w-full transition-all duration-200">
-            <button
-              onClick={() => {
-                setCurrentFile(currentPath);
-                setOpenFiles((prev) => [...new Set([...prev, currentPath])]);
+        )}
+        {Object.keys(tree).map((file) => {
+          const currentPath = path ? `${path}/${file}` : file;
+          const ext = file.split('.').pop().toLowerCase();
+          const icon = fileIcons[ext] || fileIcons.default;
 
-                // Ensure new files have valid structure
-                setFileTree((prevFileTree) => {
-                  const newTree = JSON.parse(JSON.stringify(prevFileTree));
-                  const parts = currentPath.split("/");
-                  let current = newTree;
-
-                  for (let i = 0; i < parts.length - 1; i++) {
-                    if (!current[parts[i]] || typeof current[parts[i]] !== "object") {
-                      current[parts[i]] = {}; // ✅ Ensure parent folder exists
-                    }
-                    current = current[parts[i]];
+          if (typeof tree[file] === "object" && !tree[file].file) {
+            return (
+              <div key={currentPath} className="folder">
+                <button
+                  onClick={() =>
+                    setOpenFolders((prev) =>
+                      prev.includes(currentPath)
+                        ? prev.filter((f) => f !== currentPath)
+                        : [...prev, currentPath]
+                    )
                   }
+                  className="folder-name text-lg flex cursor-pointer gap-2 hover:bg-gray-700 w-full p-2 transition-all duration-200"
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    // Add context menu logic here
+                    console.log("Context menu for folder:", currentPath);
+                  }}
+                >
+                  <i className="ri-folder-fill text-yellow-500"></i>
+                  <p
+                    className="font-semibold text-lg truncate w-full flex overflow-hidden whitespace-nowrap"
+                    title={file}
+                  >
+                    {file}
+                  </p>
+                </button>
+                {openFolders.includes(currentPath) && (
+                  <div className="pl-4">{renderFileTree(tree[file], currentPath)}</div>
+                )}
+              </div>
+            );
+          } else {
+            return (
+              <div key={currentPath} className="tree-element flex items-center gap-2 p-2 hover:bg-gray-700 w-full transition-all duration-200">
+                <button
+                  onClick={() => {
+                    setCurrentFile(currentPath);
+                    setOpenFiles((prev) => [...new Set([...prev, currentPath])]);
 
-                  // ✅ Ensure file exists
-                  if (!current[parts[parts.length - 1]]) {
-                    current[parts[parts.length - 1]] = { file: { contents: "" } };
-                  }
+                    // Ensure new files have valid structure
+                    setFileTree((prevFileTree) => {
+                      const newTree = JSON.parse(JSON.stringify(prevFileTree));
+                      const parts = currentPath.split("/");
+                      let current = newTree;
 
-                  return newTree;
-                });
-              }}
-              className="flex-grow text-left text-white truncate flex items-center gap-2"
-              title={file}
-            >
-              {icon} <span>{file}</span>
-            </button>
-            <button
-              onClick={() => deleteFile(currentPath)}
-              className="text-red-500 hover:text-red-700 transition-all duration-200"
-              title="Delete File"
-            >
-              <i className="ri-delete-bin-line"></i>
-            </button>
-          </div>
-        );
-      }
-    });
+                      for (let i = 0; i < parts.length - 1; i++) {
+                        if (!current[parts[i]] || typeof current[parts[i]] !== "object") {
+                          current[parts[i]] = {}; // ✅ Ensure parent folder exists
+                        }
+                        current = current[parts[i]];
+                      }
+
+                      // ✅ Ensure file exists
+                      if (!current[parts[parts.length - 1]]) {
+                        current[parts[parts.length - 1]] = { file: { contents: "" } };
+                      }
+
+                      return newTree;
+                    });
+                  }}
+                  className="flex-grow text-left text-white truncate flex items-center gap-2"
+                  title={file}
+                >
+                  {icon} <span>{file}</span>
+                </button>
+                <button
+                  onClick={() => deleteFile(currentPath)}
+                  className="text-red-500 hover:text-red-700 transition-all duration-200"
+                  title="Delete File"
+                >
+                  <i className="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            );
+          }
+        })}
+      </>
+    );
   };
 
   const getFileContent = (path, tree) => {
@@ -357,32 +381,32 @@ const Project = () => {
     });
   }, 1000);
 
-  const handleCreateFile = () => {
-    const trimmed = newFileName.trim();
-    if (!trimmed) return;
-    const ext = trimmed.split('.').pop().toLowerCase();
-    if (!allowedExtensions.includes(ext)) {
-      alert('Please use a valid file extension: .js, .jsx, .ts, .py, .java, .cpp, .html, .css, .md');
-      return;
-    }
-    setFileTree((prevFileTree) => {
-      const newTree = structuredClone(prevFileTree || {});
+  // const handleFileCreate = () => {
+  //   const trimmed = newFileName.trim();
+  //   if (!trimmed) return;
+  //   const ext = trimmed.split('.').pop().toLowerCase();
+  //   if (!allowedExtensions.includes(ext)) {
+  //     alert('Please use a valid file extension: .js, .jsx, .ts, .py, .java, .cpp, .html, .css, .md');
+  //     return;
+  //   }
+  //   setFileTree((prevFileTree) => {
+  //     const newTree = structuredClone(prevFileTree || {});
 
-      // ✅ Agar file already exist nahi karti, toh new file create karo
-      if (!newTree[trimmed]) {
-        newTree[trimmed] = { file: { contents: "" } }; // ✅ Empty file with content
-        // Auto-save immediately after file creation
-        autoSave(newTree);
-      }
+  //     // ✅ Agar file already exist nahi karti, toh new file create karo
+  //     if (!newTree[trimmed]) {
+  //       newTree[trimmed] = { file: { contents: "" } }; // ✅ Empty file with content
+  //       // Auto-save immediately after file creation
+  //       autoSave(newTree);
+  //     }
 
-      return newTree;
-    });
+  //     return newTree;
+  //   });
 
-    setNewFileName("");
-    setIsCreatingFile(false);
-    setCurrentFile(trimmed);
-    setOpenFiles((prevOpenFiles) => [...new Set([...prevOpenFiles, trimmed])]);
-  };
+  //   setNewFileName("");
+  //   setIsCreatingFile(false);
+  //   setCurrentFile(trimmed);
+  //   setOpenFiles((prevOpenFiles) => [...new Set([...prevOpenFiles, trimmed])]);
+  // };
 
 
   // const handleCreateFolder = () => {
@@ -610,78 +634,14 @@ const Project = () => {
     }
   }
 
-  // Modified CodeMirror component with collaborative features
-  const codeMirrorExtensions = [
-    EditorState.allowMultipleSelections.of(true),
-    detectLanguage(currentFile),
-    collaborativeDecorations(remoteCursors),
-    EditorView.updateListener.of(update => {
-      // Cursor tracking emit
-      if (update.selectionSet) {
-        const cursorPos = update.state.selection.main.head;
-        throttledCursorUpdate(cursorPos);
-      }
-      if (update.docChanged || update.selectionSet) {
-        handleCodeChange(update);
-      }
-    }),
-    // Add linting and intelligent code completion if available
-    linter ? linter() : null,
-    autocompletion ? autocompletion() : null,
-  ].filter(Boolean); // Filter out null values to avoid errors
-
-  const throttledCursorUpdate = throttle((cursorPos) => {
-    sendMessage("CURSOR_UPDATE", {
-      userId: user._id,
-      cursorPos,
-      filePath: currentFile,
-      name: user.name,
-    });
-  }, 100);
-
-  const handleCodeChange = (update) => {
-    const newContent = update.state.doc.toString();
-    const cursorPos = update.state.selection.main.head;
-
-    // Update local state
-    setFileTree(prev => {
-      const newTree = JSON.parse(JSON.stringify(prev));
-      const parts = currentFile.split('/');
-      let current = newTree;
-
-      for (let i = 0; i < parts.length - 1; i++) {
-        current = current[parts[i]] = current[parts[i]] || {};
-      }
-
-      const fileName = parts[parts.length - 1];
-      current[fileName] = { file: { contents: newContent } };
-      // Auto-save on code change (debounced)
-      autoSave(newTree);
-      return newTree;
-    });
-
-    // Broadcast changes
-    sendMessage('CODE_CHANGE', {
-      content: newContent,
-      filePath: currentFile,
-      cursorPos,
-      userId: user._id
-    });
-
-    // Typing indicators
-    sendMessage('TYPING_STATUS', { userId: user._id, isTyping: true });
-    clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      sendMessage('TYPING_STATUS', { userId: user._id, isTyping: false });
-    }, 1000);
-  };
-
   // Auto-scroll to bottom whenever messages update
   useEffect(() => {
     if (messageBoxRef.current) {
-      messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight
+      setTimeout(() => {
+        messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
+      }, 0);
     }
-  }, [messages])
+  }, [messages]);
 
   // collaborators normal karne ke liye
   useEffect(() => {
@@ -720,39 +680,292 @@ const Project = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (message.trim()) {
+        send(message.trim());
+        setMessage('');
+        e.target.style.height = 'auto';
+      }
+    }
+  };
+
+  const handleSend = () => {
+    if (message.trim()) {
+      send(message.trim());
+      setMessage('');
+      const textarea = document.querySelector('textarea');
+      if (textarea) textarea.style.height = 'auto';
+    }
+  };
+
+  const handleInstall = async () => {
+    if (isInstalling || !webContainer) return;
+    setIsInstalling(true);
+
+    try {
+      await webContainer.mount(fileTree);
+      const installProcess = await webContainer.spawn("npm", ["install"]);
+
+      installProcess.output.pipeTo(new WritableStream({
+        write(chunk) {
+          console.log(chunk);
+        }
+      }));
+
+      await installProcess.exit;
+      setIsInstalled(true);
+    } catch (error) {
+      console.error("Installation error:", error);
+    } finally {
+      setIsInstalling(false);
+    }
+  };
+
+  const handleRun = async () => {
+    if (runProcess) {
+      await runProcess.kill();
+    }
+
+    try {
+      await webContainer.mount(fileTree);
+      const newProcess = await webContainer.spawn("npm", ["start"]);
+      setRunProcess(newProcess);
+
+      newProcess.output.pipeTo(new WritableStream({
+        write(chunk) {
+          console.log(chunk);
+        }
+      }));
+
+      webContainer.on("server-ready", (port, url) => {
+        setIframeUrl(url);
+        autoSave(fileTree);
+        setIsPreviewPanelOpen(true);
+      });
+    } catch (error) {
+      console.error("Run error:", error);
+    }
+  };
+
+  const handleCloseTab = (file) => {
+    setOpenFiles(prev => prev.filter(f => f !== file));
+    if (currentFile === file) {
+      setCurrentFile(openFiles.length > 1 ? openFiles[0] : null);
+    }
+  };
+
+  // Add this derived state for filtered users
+  const filteredUsers = users.filter(user =>
+    !project.users.some(projectUser => projectUser._id === user._id) &&
+    (user.name.toLowerCase().includes(searchQuery) ||
+      user.email.toLowerCase().includes(searchQuery))
+  );
+
+  // Add these inside the Project component
+
+  const handleCodeChange = (value, viewUpdate) => {
+    if (!currentFile || !viewUpdate) return;
+
+    const newContent = value;
+    const cursorPos = viewUpdate.state.selection.ranges[0].from;
+
+    // Update local file tree state
+    setFileTree(prev => {
+      const newTree = structuredClone(prev);
+      const parts = currentFile.split('/');
+      let current = newTree;
+
+      // Navigate to the file location in the tree
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) current[parts[i]] = {};
+        current = current[parts[i]];
+      }
+
+      // Update file contents
+      const fileName = parts[parts.length - 1];
+      current[fileName] = { file: { contents: newContent } };
+
+      // Debounced auto-save
+      autoSave(newTree);
+      return newTree;
+    });
+
+    // Broadcast changes to collaborators
+    sendMessage('CODE_CHANGE', {
+      content: newContent,
+      filePath: currentFile,
+      cursorPos,
+      userId: user._id
+    });
+
+    // Handle typing indicators
+    sendMessage('TYPING_STATUS', {
+      userId: user._id,
+      isTyping: true,
+      fileName: currentFile,
+      projectId: project._id
+    });
+
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      sendMessage('TYPING_STATUS', {
+        userId: user._id,
+        isTyping: false,
+        fileName: currentFile,
+        projectId: project._id
+      });
+    }, 1500);
+  };
+
+  // Enhanced CodeMirror extensions configuration
+  const codeMirrorExtensions = (filePath) => [
+    EditorState.allowMultipleSelections.of(true),
+    detectLanguage(filePath),
+    EditorView.lineWrapping,
+    EditorView.updateListener.of(update => {
+      if (update.docChanged || update.selectionSet) {
+        const cursorPos = update.state.selection.main.head;
+        throttledCursorUpdate(cursorPos);
+      }
+    }),
+    collaborativeDecorations(remoteCursors),
+    EditorView.theme({
+      "&": {
+        fontSize: "14px",
+        height: "100%",
+        backgroundColor: "transparent",
+      },
+      ".cm-content": {
+        fontFamily: "Fira Code, Menlo, Monaco, Consolas, Courier New, monospace",
+        padding: "1rem 0",
+      },
+      ".cm-gutters": {
+        backgroundColor: "#1a1a1a",
+        borderRight: "1px solid #333",
+        color: "#666",
+      },
+      ".cm-activeLine": {
+        backgroundColor: "#ffffff08",
+      },
+      ".cm-activeLineGutter": {
+        backgroundColor: "#ffffff05",
+      },
+      ".collaborator-cursor": {
+        position: "relative",
+        "&::after": {
+          content: "attr(data-user)",
+          position: "absolute",
+          top: "-1.25rem",
+          left: "-2px",
+          fontSize: "0.75rem",
+          background: "var(--cursor-color)",
+          color: "white",
+          padding: "0.25rem 0.5rem",
+          borderRadius: "4px",
+          whiteSpace: "nowrap",
+        }
+      }
+    }),
+    linter(),
+    autocompletion(),
+    EditorView.contentAttributes.of({ "data-enable-grammarly": "false" }),
+  ];
+
+  // File creation handler
+  const handleFileCreate = () => {
+    const trimmedName = newFileName.trim();
+
+    if (!trimmedName) {
+      setIsCreatingFile(false);
+      return;
+    }
+
+    // Validate file extension
+    const extension = trimmedName.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(extension)) {
+      alert(`Invalid file extension. Allowed: ${allowedExtensions.join(', ')}`);
+      setNewFileName("");
+      setIsCreatingFile(false);
+      return;
+    }
+
+    // Split path into directories and filename
+    const pathParts = trimmedName.split('/');
+    const fileName = pathParts.pop();
+    const directories = pathParts;
+
+    setFileTree(prev => {
+      const newTree = structuredClone(prev);
+      let currentLevel = newTree;
+
+      // Navigate through/create directories
+      directories.forEach(dir => {
+        if (!currentLevel[dir]) {
+          currentLevel[dir] = {};
+        }
+        currentLevel = currentLevel[dir];
+      });
+
+      // Create file if it doesn't exist
+      if (!currentLevel[fileName]) {
+        currentLevel[fileName] = { file: { contents: "" } };
+
+        // Auto-save after creation
+        autoSave(newTree);
+
+        // Open parent folders
+        setOpenFolders(prev => [
+          ...new Set([...prev, ...directories])
+        ]);
+      }
+
+      return newTree;
+    });
+
+    // Set as current file and add to open files
+    const fullPath = trimmedName;
+    setCurrentFile(fullPath);
+    setOpenFiles(prev => [...new Set([...prev, fullPath])]);
+    setNewFileName("");
+    setIsCreatingFile(false);
+  };
+
+
   return (
-    <main className="h-screen w-screen flex bg-gray-950 text-white">
-      {/* Home button (top right) */}
-      <section className="left relative h-full flex flex-col w-[350px] min-w-[300px] max-w-[400px] bg-gray-800 shadow-lg">
+    <main className="h-screen w-screen flex bg-gradient-to-br from-gray-900 to-blue-900/20 text-white overflow-hidden">
+      {/* Left Chat Section */}
+      <section className="left relative h-full flex flex-col w-[350px] min-w-[250px] bg-gray-800/80 shadow-2xl backdrop-blur-sm">
         <div className="chats h-full flex flex-col">
-          <header className="relative flex items-center justify-between w-full bg-gray-950 p-4 h-14 shadow-md">
-              <button
-                onClick={() => navigate('/home')}
-                className="text-blue-500 text-2xl hover:text-blue-400 font-bold transition-all duration-300"
-                title="Go to Home"
-              >
-                <i className="ri-home-4-line"></i>
-              </button>
-            <div className="w-full">
-              <h2
-                className="text-white text-lg font-semibold truncate cursor-pointer ml-2"
-                title={project.name}
-              >
+          {/* Chat Header */}
+          <header className="flex items-center justify-between w-full bg-gray-900/90 p-4 h-16 border-b border-gray-700 backdrop-blur-sm">
+            <button
+              onClick={() => navigate('/home')}
+              className="text-blue-400 hover:text-blue-300 text-2xl p-2 rounded-lg transition-all"
+              title="Go to Home"
+            >
+              <i className="ri-home-4-line"></i>
+            </button>
+
+            <div className="flex-1 px-4">
+              <h2 className="text-white text-lg font-semibold truncate" title={project.name}>
                 {project.name}
               </h2>
+              <p className="text-xs text-gray-400">{project.users.length} collaborators</p>
             </div>
+
             <button
               onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
-              className="cursor-pointer text-blue-500 text-2xl hover:text-blue-400 transition-colors"
+              className="text-blue-400 hover:text-blue-300 text-2xl p-2 rounded-lg transition-all"
             >
               <i className="ri-group-fill"></i>
             </button>
           </header>
-          <div className="conversation-area flex flex-grow flex-col p-4 overflow-y-auto">
-            <div
-              ref={messageBoxRef}
-              className="message-box flex-grow flex flex-col gap-4 overflow-y-auto"
-            >
+
+          {/* Chat Messages */}
+          <div ref={messageBoxRef} className="conversation-area flex flex-grow flex-col p-4 overflow-y-auto space-y-4">
+            <div className="message-box flex-grow flex flex-col gap-4">
               {messages.map((msg, index) => {
                 const isOutgoing = msg.sender._id === user._id;
                 const isAI = msg.sender._id === "ai";
@@ -763,34 +976,37 @@ const Project = () => {
 
                 return (
                   <div
-                    key={msg._id || index} // Ensure unique key
-                    className={`message flex flex-col rounded-lg p-2 shadow-md ${isAI ? "max-w-full" : "max-w-[70%]"
-                      } ${isOutgoing
-                        ? "ml-auto bg-blue-600 text-white"
-                        : "self-start bg-gray-700 text-gray-200"
+                    key={msg._id || index}
+                    className={`message flex flex-col rounded-xl p-3 shadow-lg ${isAI ? "w-full bg-gray-700" :
+                      isOutgoing
+                        ? "ml-auto bg-blue-600/90 text-white"
+                        : "self-start bg-gray-700/50 text-gray-200"
                       }`}
                   >
-                    <div className="flex justify-between items-center">
-                      {!isOutgoing && (
-                        <small
+                    <div className="flex justify-between items-center mb-1">
+                      {!isOutgoing && !isAI && (
+                        <span
                           className="text-xs font-medium"
                           style={{ color: getColorForSender(msg.sender.name) }}
                         >
                           {msg.sender.name}
-                        </small>
+                        </span>
+                      )}
+                      {isAI && (
+                        <div className="flex items-center gap-2 text-blue-400">
+                          {/* <i className="ri-ai-generate"></i> */}
+                          <span className="text-sm font-semibold">AI Assistant</span>
+                        </div>
                       )}
                     </div>
-                    <div className="text-sm">
+                    <div className="text-sm mb-1">
                       {isAI ? (
                         <WriteAiMessage message={msg.message} />
                       ) : (
                         <div className="break-words">{msg.message}</div>
                       )}
                     </div>
-                    <div
-                      className={`text-xs text-right ${isOutgoing ? "text-gray-300" : "text-gray-400"
-                        }`}
-                    >
+                    <div className={`text-xs ${isOutgoing ? 'text-blue-200' : 'text-gray-400'}`}>
                       {timestamp}
                     </div>
                   </div>
@@ -798,24 +1014,9 @@ const Project = () => {
               })}
             </div>
           </div>
-          <div className="inputField w-full flex items-center bg-[#0f1115] p-2 gap-1 rounded-b shadow-md">
-            {/* ➕ attachment button */}
-            {/* <button
-          className="text-gray-400 text-2xl p-2 hover:bg-gray-700 rounded-full transition-colors"
-          title="Add attachment"
-        >
-          <i className="ri-add-line"></i>
-        </button> */}
 
-            {/* 😊 emoji picker button */}
-            {/* <button
-          className="text-gray-400 text-2xl p-2 hover:bg-gray-700 rounded-full transition-colors"
-          title="Insert emoji"
-        >
-          <i className="ri-emotion-line"></i>
-        </button> */}
-
-            {/* 📥 expanding textarea with scrollbar */}
+          {/* Message Input */}
+          <div className="inputField w-full flex items-center bg-gray-900/80 p-3 gap-2 border-t border-gray-700 backdrop-blur-sm">
             <div className="flex-grow">
               <textarea
                 value={message}
@@ -878,53 +1079,50 @@ const Project = () => {
             </button>
           </div>
         </div>
-        <div
-          className={`sidePanel flex flex-col gap-4 h-full w-full absolute bg-gray-800 shadow-lg transition-transform ${isSidePanelOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
-        >
-          <header className="flex justify-between items-center p-4 bg-gray-950 shadow-md h-14">
-            <div className="flex gap-2 items-center ml-2">
-              <i
-                className={`${project.users.length <= 1
-                  ? "ri-user-fill"
-                  : "ri-group-fill"
-                  } text-2xl text-blue-500`}
-              ></i>
-              <h2 className="text-white text-xl font-semibold">
-                {project.users.length <= 1
-                  ? `Collaborator:`
-                  : `Collaborators:`}{" "}
-                {project.users.length}
+
+        {/* Collaborators Side Panel */}
+        <div className={`sidePanel absolute inset-0 bg-gray-800/95 backdrop-blur-xl transition-transform 
+                    ${isSidePanelOpen ? "translate-x-0" : "-translate-x-full"}`}>
+          <header className="flex justify-between items-center p-4 bg-gray-900 h-16 border-b border-gray-700">
+            <div className="flex items-center gap-3">
+              <i className="ri-team-line text-2xl text-blue-400"></i>
+              <h2 className="text-white text-lg font-semibold">
+                Collaborators ({project.users.length})
               </h2>
             </div>
-            <div className="buttons flex gap-3">
+            <div className="flex gap-3">
               <button
-                onClick={() => setIsModalOpen(!isModalOpen)}
-                className="text-2xl text-blue-500 hover:text-blue-400 transition-colors"
+                onClick={() => setIsModalOpen(true)}
+                className="text-blue-400 hover:text-blue-300 text-xl p-2 rounded-lg transition-all"
               >
-                <i className="ri-user-add-fill"></i>
+                <i className="ri-user-add-line"></i>
               </button>
               <button
-                onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
-                className="text-3xl text-blue-500 hover:text-blue-400 transition-colors"
+                onClick={() => setIsSidePanelOpen(false)}
+                className="text-gray-400 hover:text-gray-300 text-2xl p-2 rounded-lg transition-all"
               >
                 <i className="ri-close-line"></i>
               </button>
             </div>
           </header>
-          <div className="users flex flex-col gap-3 px-3">
+
+          <div className="users-list p-4 space-y-3 overflow-y-auto">
             {project.users?.map((user) => (
-              <div key={user._id} className="user flex items-center gap-3 bg-gray-900 p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">
-                <div className="profile rounded-full px-2 py-1 text-xl text-blue-500 bg-gray-800">
-                  <i className="ri-user-fill"></i>
-                </div>
-                <div className="userName text-white font-semibold">
-                  {user.name}{" "}
+              <div key={user._id} className="flex items-center gap-4 p-3 bg-gray-700/30 rounded-xl hover:bg-gray-700/50 transition-all">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <i className="ri-user-3-line text-blue-400"></i>
+                  </div>
                   {user._id === project.admin?._id && (
-                    <span className="text-yellow-500 text-sm">(admin)</span>
+                    <div className="absolute -bottom-0.5 -right-0 ">
+                      <i className="ri-shield-star-line text-yellow-500"></i>
+                    </div>
                   )}
-                  <div className="email text-gray-400 text-xs">
-                    {user.email}
+                </div>
+                <div>
+                  <div className="text-white font-medium">
+                    {user.name}
+                    <span className="text-gray-400 text-sm ml-2">{user.email}</span>
                   </div>
                 </div>
               </div>
@@ -932,326 +1130,230 @@ const Project = () => {
           </div>
         </div>
       </section>
-      <section className="right flex flex-grow h-full overflow-hidden">
-        <div className="explorer bg-gray-900 h-full w-56 flex flex-col border-r border-gray-700 shadow-lg">
-          <div className="flex items-center justify-between border-b border-gray-700 h-14 px-4">
-            <div className="text-white font-semibold">EXPLORER</div>
-            <div className="text-blue-500 text-xl flex gap-3">
+
+      {/* Right Editor Section */}
+      <section className="right flex flex-grow h-full bg-gray-900/80 backdrop-blur-sm">
+        {/* File Explorer */}
+        <div className="explorer h-full w-52 flex flex-col border-r border-gray-700">
+          <div className="flex items-center justify-between p-4 h-16 border-b border-gray-700">
+            <h3 className="text-white font-semibold">EXPLORER</h3>
+            <div className="flex gap-2">
               <button
-                onClick={() => setIsCreatingFile(true)}
-                className="hover:text-blue-400 transition-colors"
+                onClick={() => {
+                  setIsCreatingFile(true);
+                  setNewFileName("");
+                }}
+                className="text-blue-400 hover:text-blue-300 p-2 rounded-lg transition-all"
               >
-                <i className="ri-file-add-line"></i>
+                <i className="ri-file-add-line text-xl"></i>
               </button>
-              {/* <button
-                onClick={() => setIsCreatingFolder(true)}
-                className="hover:text-blue-400 transition-colors"
-              >
-                <i className="ri-folder-add-line"></i>
-              </button> */}
             </div>
           </div>
-          <div className="file-tree w-full p-4">
-            {/* Input for New File Name */}
-            {isCreatingFile && (
-              <input
-                type="text"
-                value={newFileName}
-                onChange={(e) => setNewFileName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateFile()}
-                onBlur={() => setIsCreatingFile(false)}
-                className="border p-2 rounded w-full outline-none bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 transition"
-                placeholder="Enter file name..."
-                autoFocus
-              />
-            )}
-            {/* File Tree Rendering */}
-            <div>{renderFileTree(fileTree)}</div>
+
+          <div className="file-tree p-4 space-y-2 overflow-y-auto">
+            {renderFileTree(fileTree)}
           </div>
         </div>
-        <div className="editor flex-grow h-full w-0 relative">
-          {/* Editor and Preview Panel */}
-          <div className="code-editor flex flex-col h-full bg-gray-800 w-full">
 
-
-            {/* Tabs Section */}
-            <div className="top h-12 min-h-12 pr-1 flex justify-between w-full bg-gray-900 border-b border-gray-700">
-              <div className="tab flex flex-row overflow-y-auto gap-2">
-                {openFiles.map((file, index) => (
-                  <div
-                    key={`${file}-${index}`}
-                    className={`header flex items-center px-4 py-2 gap-2 rounded-t-lg border-b-2 ${currentFile === file ? "border-blue-500 bg-gray-800" : "border-transparent hover:bg-gray-700"} transition-all duration-200`}
+        {/* Code Editor */}
+        <div className="editor flex-grow flex flex-col min-w-0">
+          {/* Editor Tabs */}
+          <div className="tabs-bar flex items-center h-16 px-4 bg-gray-900 border-b border-gray-700">
+            <div className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600">
+              {openFiles.map((file) => (
+                <div
+                  key={file}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 ${currentFile === file
+                    ? "border-blue-500 bg-gray-800"
+                    : "border-transparent hover:bg-gray-700"
+                    }`}
+                >
+                  <i className="ri-file-line text-blue-400"></i>
+                  <span className="text-white truncate max-w-[150px]">{file}</span>
+                  <button
+                    onClick={() => handleCloseTab(file)}
+                    className="text-gray-400 hover:text-red-400 ml-2 transition-all"
                   >
-                    <button
-                      onClick={() => setCurrentFile(file)}
-                      className="text-white flex items-center gap-2"
-                    >
-                      <i className="ri-file-line text-blue-500"></i>
-                      <p className="font-semibold text-lg">{file}</p>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const updatedFiles = openFiles.filter((f) => f !== file);
-                        setOpenFiles(updatedFiles);
-                        if (currentFile === file) {
-                          setCurrentFile(updatedFiles.length > 0 ? updatedFiles[0] : null);
-                        }
-                      }}
-                      className="text-xl cursor-pointer text-blue-500 hover:text-red-500 transition-all duration-200"
-                    >
-                      <i className="ri-close-line"></i>
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="actions flex gap-2 py-1 ">
-                <button
-                  onClick={async () => {
-                    if (isInstalling) return; // Prevent multiple installs
-                    setIsInstalling(true);
-
-                    await webContainer?.mount(fileTree);
-                    const installProcess = await webContainer.spawn("npm", ["install"]);
-
-                    installProcess.output.pipeTo(new WritableStream({
-                      write(chunk) {
-                        console.log(chunk);
-                      }
-                    }));
-
-                    await installProcess.exit;
-                    setIsInstalling(false);
-                    setIsInstalled(true);
-                    setIsPreviewPanelOpen(!isPreviewPanelOpen); // Open preview panel after autoSave
-                  }}
-
-                  className="text-xl text-blue-500 px-4 cursor-pointer bg-gray-950 rounded-lg hover:bg-gray-700 transition-all duration-200"
-                >
-                  {isInstalling ? "Installing..." : "Install"}
-                </button>
-
-
-                <button
-                  onClick={async () => {
-                    if (runProcess) {
-                      await runProcess.kill();
-                    }
-
-                    await webContainer.mount(fileTree); // Mount before running
-
-                    const process = await webContainer.spawn("npm", ["start"]);
-                    setRunProcess(process);
-
-
-                    process.output.pipeTo(new WritableStream({
-                      write(chunk) {
-                        console.log(chunk);
-                      }
-                    }));
-
-
-                    webContainer.on("server-ready", (port, url) => {
-                      console.log("Server running on:", url);
-                      setIframeUrl(url);
-
-                      // 🔹 Server run hone ke baad hi save karna
-                      autoSave(fileTree);
-
-                      // 🔹 Preview Panel ko open karna
-                      setIsPreviewPanelOpen(!isPreviewPanelOpen);
-                    });
-                  }}
-
-                  className="text-xl text-blue-500 px-4 cursor-pointer bg-gray-950 rounded-lg hover:bg-gray-700 transition-all duration-200"
-                >
-                  Run
-                </button>
-
-                <select
-                  value={selectedTheme}
-                  onChange={(e) => setSelectedTheme(e.target.value)}
-                  className="bg-gray-950 text-blue-500 p-1 rounded-lg cursor-pointer hover:bg-gray-700 transition-all duration-200"
-                >
-                  {Object.keys(THEMES).map(themeName => (
-                    <option key={themeName} value={themeName}>
-                      {themeName.charAt(0).toUpperCase() + themeName.slice(1)}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={() => setIsPreviewPanelOpen(!isPreviewPanelOpen)}
-                  className='cursor-pointer text-blue-500 text-xl bg-gray-950 rounded-lg hover:bg-gray-700 transition-all duration-200'
-                  title="preview">
-                  <i className="ri-arrow-up-s-line p-2"></i>
-                </button>
-
-
-              </div>
+                    <i className="ri-close-line"></i>
+                  </button>
+                </div>
+              ))}
             </div>
 
-            {/* Code Editor Section */}
-            <div className="bottom flex w-full flex-grow overflow-y-auto">
+            <div className="ml-auto flex gap-3">
+              <button
+                onClick={handleInstall}
+                className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600/40 text-blue-400 rounded-lg transition-all"
+                disabled={isInstalling}
+              >
+                {isInstalling ? <i className="ri-loader-4-line animate-spin"></i> : "Install"}
+              </button>
 
-              {currentFile ? (
-                <div className="h-full w-full overflow-x-auto">
-                  <CodeMirror
-                    key={currentFile} // Ensures re-render on file change
-                    value={currentFile ? getFileContent(currentFile, fileTree) : ''}
-                    theme={THEMES[selectedTheme]}
-                    extensions={codeMirrorExtensions}
-                    className="w-full h-full min-w-[600px]"
-                    height="100%"
-                    onChange={(value) => {
-                      setFileTree((prevFileTree) => {
-                        const newTree = structuredClone(prevFileTree);
-                        const parts = currentFile.split("/");
-                        let current = newTree;
+              <button
+                onClick={handleRun}
+                className="px-4 py-2 bg-green-600/30 hover:bg-green-600/40 text-green-400 rounded-lg transition-all"
+              >
+                Run
+              </button>
 
-                        for (let i = 0; i < parts.length - 1; i++) {
-                          if (!current[parts[i]]) return prevFileTree;
-                          current = current[parts[i]];
-                        }
-
-                        if (current[parts[parts.length - 1]]?.file) {
-                          current[parts[parts.length - 1]].file.contents = value;
-                        }
-
-                        return newTree;
-                      });
-
-                      // 🔥 Hot Reload Bina Server Restart Kiye
-                      webContainer.mount(fileTree);
-                    }}
-
-                  />
-                </div>
-              ) : (
-                <div className="h-full w-full">
-                  <div className="flex flex-col items-center justify-center h-full w-full text-white text-lg bg-gray-850">
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold text-blue-500 mb-4">Welcome to Your Project</h1>
-                      <p className="text-gray-400 mb-6">Select a file from the explorer to start editing.</p>
-                      <div className="flex gap-4 justify-center">
-                        <button
-                          onClick={() => setIsCreatingFile(true)}
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                        >
-                          Create New File
-                        </button>
-                        {/* <button
-                          onClick={() => setIsCreatingFolder(true)}
-                          className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg"
-                        >
-                          Create New Folder
-                        </button> */}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <select
+                value={selectedTheme}
+                onChange={(e) => setSelectedTheme(e.target.value)}
+                className="bg-gray-800 text-blue-400 px-3 rounded-lg cursor-pointer"
+              >
+                {Object.keys(THEMES).map(theme => (
+                  <option key={theme} value={theme}>{theme}</option>
+                ))}
+              </select>
             </div>
           </div>
-          {/* <button onClick={() => setReloadKey(prev => prev + 1)}>Reload</button> */}
-          {iframeUrl && webContainer && (
-            <div className={`preview h-full w-full box-border max-w-full flex flex-grow flex-col items-center bg-gray-900 absolute transition-transform duration-300 ${isPreviewPanelOpen ? 'translate-y-0' : '-translate-y-full'}`}>
-              <div className="header h-12 min-h-12 px-1 flex justify-between w-full bg-gray-900 border-b border-gray-700">
-                <input type="text"
-                  onChange={(e) => setIframeUrl(e.target.value)}
-                  value={iframeUrl}
-                  className="w-[94%] p-2  text-white bg-gray-700 outline-none rounded-full m-1"
-                />
+
+          {/* Code Editor Content */}
+          <div className="editor-content flex-grow relative min-w-0">
+            {currentFile ? (
+              <CodeMirror
+                key={currentFile + selectedTheme} // Force remount on theme/file change
+                value={getFileContent(currentFile, fileTree)}
+                theme={THEMES[selectedTheme]}
+                extensions={codeMirrorExtensions(currentFile)}
+                className="h-full overflow-x-auto"
+                height="100%"
+                onChange={handleCodeChange}
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLineGutter: true,
+                  bracketMatching: true,
+                  closeBrackets: true,
+                  autocompletion: true,
+                  rectangularSelection: true,
+                  crosshairCursor: true,
+                  highlightActiveLine: true,
+                  highlightSelectionMatches: true,
+                  foldGutter: true,
+                  syntaxHighlighting: true,
+                  searchKeymap: true,
+                  lintKeymap: true,
+                }}
+              />
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center bg-gray-950/50 text-center p-8">
+                <i className="ri-code-s-slash-line text-6xl text-blue-400 mb-4"></i>
+                <h3 className="text-2xl font-bold text-white mb-2">Welcome to {project.name}</h3>
+                <p className="text-gray-400 mb-6">Select a file or create a new one to start coding</p>
                 <button
-                  onClick={() => setIsPreviewPanelOpen(!isPreviewPanelOpen)}
-                  className='cursor-pointer text-blue-500 text-xl m-1 bg-gray-950 rounded-lg hover:bg-gray-700 p-2 transition-all duration-200'>
-                  <i className="ri-arrow-down-s-line text-blue-500"></i>
+                  onClick={() => setIsCreatingFile(true)}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-all"
+                >
+                  Create New File
                 </button>
               </div>
-              <iframe key={reloadKey} src={iframeUrl} className="w-full h-full bg-white"></iframe>
+            )}
+          </div>
+
+          {/* Preview Panel */}
+          {iframeUrl && (
+            <div className="relative">
+              <button
+                onClick={() => setIsPreviewPanelOpen(!isPreviewPanelOpen)}
+                className='cursor-pointer text-blue-500 text-xl bg-gray-950 rounded-lg hover:bg-gray-700 transition-all duration-200 fixed bottom-4 right-4 z-50'
+                title="preview"
+              >
+                <i className={`ri-arrow-${isPreviewPanelOpen ? 'down' : 'up'}-s-line p-2`}></i>
+              </button>
+
+              <div
+                className={`preview-panel fixed bottom-0 left-0 right-0 h-full bg-gray-900 border-gray-700 transition-transform duration-300 ease-in-out ${isPreviewPanelOpen ? 'translate-y-0' : 'translate-y-full'}`}
+                style={{ zIndex: 40 }}
+              >
+                <div className="flex items-center justify-between p-3 border-b border-gray-700">
+                  <input
+                    type="text"
+                    value={iframeUrl}
+                    onChange={(e) => setIframeUrl(e.target.value)}
+                    className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-lg mr-4 focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setReloadKey(prev => prev + 1)}
+                      className="text-blue-400 hover:text-blue-300 transition-colors"
+                      title="Reload Preview"
+                    >
+                      <i className="ri-refresh-line text-xl"></i>
+                    </button>
+                    <button
+                      onClick={() => setIsPreviewPanelOpen(false)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      <i className="ri-close-line text-xl"></i>
+                    </button>
+                  </div>
+                </div>
+                <iframe
+                  key={reloadKey}
+                  src={iframeUrl}
+                  className="w-full h-full bg-white"
+                  title="Preview"
+                />
+              </div>
             </div>
           )}
-          {/* )} */}
         </div>
       </section>
 
+      {/* Add Collaborators Modal */}
       {isModalOpen && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75"
-          onClick={() => setSearchQuery("")} // Reset search query on outside click
-        >
-          <div
-            className="bg-gray-800 p-6 rounded-lg shadow-lg w-[90%] max-w-md"
-            onClick={(e) => e.stopPropagation()} // Prevent resetting when clicking inside the modal
-          >
-            <h2 className="text-white text-xl font-semibold mb-4 text-center">
-              Select a Collaborator
-            </h2>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Add Collaborators</h3>
+
             <input
               type="text"
-              placeholder="Search by name or email..."
-              className="ml-[10%] w-[80%] p-2 mb-4 rounded bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 outline-none "
+              placeholder="Search users..."
+              className="w-full p-3 mb-4 bg-gray-700 rounded-lg text-white placeholder-gray-400"
+              value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
-              value={searchQuery} // Bind input value to state
             />
-            <div className="addCollaborators max-h-60 overflow-y-auto flex flex-col gap-3">
-              {users
-                .filter(
-                  (user) =>
-                    !project.users.some(
-                      (projectUser) => projectUser._id === user._id
-                    ) &&
-                    (user.name.toLowerCase().includes(searchQuery) ||
-                      user.email.toLowerCase().includes(searchQuery))
-                ).length > 0 ? (
-                users
-                  .filter(
-                    (user) =>
-                      !project.users.some(
-                        (projectUser) => projectUser._id === user._id
-                      ) &&
-                      (user.name.toLowerCase().includes(searchQuery) ||
-                        user.email.toLowerCase().includes(searchQuery))
-                  )
-                  .map((user) => (
-                    <div
-                      key={user._id} // Ensure unique key
-                      className={`user flex items-center gap-3 p-3 rounded-lg cursor-pointer ${Array.from(selectedUserIds).includes(user._id)
-                        ? "bg-gray-700 hover:bg-gray-600"
-                        : "bg-gray-900 hover:bg-gray-800"
-                        } transition-colors`}
-                      onClick={() => handleUserClick(user._id)}
-                    >
-                      <div className="profile rounded-full px-2 py-1 text-xl text-blue-500 bg-gray-800">
-                        <i className="ri-user-fill"></i>
-                      </div>
-                      <div className="userName text-white font-semibold">
-                        {user.name}
-                        <div className="email text-gray-400 text-xs">
-                          {user.email}
-                        </div>
-                      </div>
+
+            <div className="users-list max-h-[50vh] overflow-y-auto space-y-3">
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map(user => (
+                  <div
+                    key={user._id}
+                    className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-all ${selectedUserIds.has(user._id)
+                      ? 'bg-blue-500/20 border border-blue-500/30'
+                      : 'bg-gray-700/30 hover:bg-gray-700/50'
+                      }`}
+                    onClick={() => handleUserClick(user._id)}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <i className="ri-user-line text-blue-400"></i>
                     </div>
-                  ))
+                    <div>
+                      <div className="text-white font-medium">{user.name}</div>
+                      <div className="text-gray-400 text-sm">{user.email}</div>
+                    </div>
+                  </div>
+                ))
               ) : (
-                <div className="text-center text-gray-400">
-                  No users available to add as collaborators.
+                <div className="text-center text-gray-400 p-4">
+                  No matching users found
                 </div>
               )}
             </div>
-            <div className="flex justify-between gap-4 mt-4">
+
+            <div className="flex gap-4 mt-6">
               <button
-                onClick={() => setIsModalOpen(!isModalOpen)}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition"
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all"
               >
-                Close
+                Cancel
               </button>
               <button
                 onClick={addCollaborators}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition"
+                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all"
                 disabled={selectedUserIds.size === 0}
               >
-                Add Collaborator
+                Add Selected
               </button>
             </div>
           </div>
