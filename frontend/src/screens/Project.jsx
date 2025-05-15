@@ -23,6 +23,8 @@ import { initializeSocket, receiveMessage, sendMessage } from '../config/socket.
 import { UserContext } from '../context/UserProvider.jsx'
 import Markdown from 'markdown-to-jsx'
 import { getWebContainer } from "../config/webContainer.js";
+import { pythonIcon, cppIcon, javaIcon, goIcon, swiftIcon, kotlinIcon } from '../components/LanguageIcons.jsx';
+import { Icon } from '@iconify/react';
 
 const dracula = draculaInit();
 
@@ -51,83 +53,115 @@ const THEMES = {
 
 const CURSOR_TIMEOUT = 2000; // 2 seconds
 
-const WriteAiMessage = React.memo(({ message }) => {
-  let content;
-  try {
-    const parsed = typeof message === 'string' ? JSON.parse(message) : message;
-    content = parsed.text || parsed; // Extract the 'text' property or use the parsed object
-  } catch {
-    content = message; // Fallback to the raw message if parsing fails
-  }
+// ICON MAP for file extensions
+const fileIcons = {
+  js: <Icon icon="devicon:javascript" width="1.5em" height="1.5em" color="#f7e018" />,
+  jsx: <Icon icon="devicon:react" width="1.5em" height="1.5em" color="#61dafb" />,
+  ts: <Icon icon="devicon:typescript" width="1.5em" height="1.5em" color="#3178c6" />,
+  py: <Icon icon="devicon:python" width="1.5em" height="1.5em" />,
+  java: <Icon icon="devicon:java" width="1.5em" height="1.5em" />,
+  cpp: <Icon icon="devicon:cplusplus" width="1.5em" height="1.5em" />,
+  html: <Icon icon="devicon:html5" width="1.5em" height="1.5em" color="#e34c26" />,
+  css: <Icon icon="devicon:css3" width="1.5em" height="1.5em" color="#264de4" />,
+  md: <Icon icon="devicon:markdown" width="1.5em" height="1.5em" />,
+  json: <Icon icon="vscode-icons:file-type-json" width="1.5em" height="1.5em" />,
+  xml: <Icon icon="vscode-icons:file-type-xml" width="1.5em" height="1.5em" />,
+  sh: <Icon icon="devicon:bash" width="1.5em" height="1.5em" />,
+  go: <Icon icon="devicon:go" width="1.5em" height="1.5em" />,
+  rs: <Icon icon="devicon:rust" width="1.5em" height="1.5em" />,
+  php: <Icon icon="devicon:php" width="1.5em" height="1.5em" />,
+  cs: <Icon icon="devicon:csharp" width="1.5em" height="1.5em" />,
+  swift: <Icon icon="devicon:swift" width="1.5em" height="1.5em" />,
+  kt: <Icon icon="devicon:kotlin" width="1.5em" height="1.5em" />,
+  dart: <Icon icon="devicon:dart" width="1.5em" height="1.5em" />,
+  scss: <Icon icon="devicon:sass" width="1.5em" height="1.5em" />,
+  less: <Icon icon="vscode-icons:file-type-less" width="1.5em" height="1.5em" />,
+  yaml: <Icon icon="vscode-icons:file-type-yaml" width="1.5em" height="1.5em" />,
+  yml: <Icon icon="vscode-icons:file-type-yaml" width="1.5em" height="1.5em" />,
+  toml: <Icon icon="vscode-icons:file-type-toml" width="1.5em" height="1.5em" />,
+  txt: <Icon icon="vscode-icons:file-type-text" width="1.5em" height="1.5em" />,
+  lock: <Icon icon="vscode-icons:file-type-lock" width="1.5em" height="1.5em" />,
+  dockerfile: <Icon icon="devicon:docker" width="1.5em" height="1.5em" />,
+  makefile: <Icon icon="vscode-icons:file-type-makefile" width="1.5em" height="1.5em" />,
+  rb: <Icon icon="devicon:ruby" width="1.5em" height="1.5em" />,
+  pl: <Icon icon="devicon:perl" width="1.5em" height="1.5em" />,
+  sql: <Icon icon="devicon:mysql" width="1.5em" height="1.5em" />,
+  default: <Icon icon="vscode-icons:file-type-generic" width="1.5em" height="1.5em" />
+};
 
-  // Format the content for markdown rendering
-  const formattedContent = typeof content === 'object'
-    ? JSON.stringify(content, null, 2) // Format objects as JSON
-    : content;
+// Allowed file extensions
+const allowedExtensions = [
+  'js', 'jsx', 'ts', 'py', 'java', 'cpp', 'html', 'css', 'md',
+  'json', 'xml', 'sh', 'go', 'rs', 'php', 'cs', 'swift', 'kt', 'dart',
+  'scss', 'less', 'yaml', 'yml', 'toml', 'txt', 'lock', 'dockerfile', 'makefile', 'rb', 'pl', 'sql'
+];
+
+const WriteAiMessage = React.memo(({ message }) => {
+  const formattedContent = (() => {
+    try {
+      const parsed = typeof message === 'string' ? JSON.parse(message) : message;
+      return parsed.text || parsed;
+    } catch {
+      return typeof message === 'string' ? message : String(message);
+    }
+  })();
 
   return (
     <div className="ai-reply bg-gray-800 rounded-lg p-4 text-sm leading-relaxed text-gray-300 shadow-md border border-gray-700">
       <Markdown
         options={{
           overrides: {
-            // code blocks
+            // Custom components for special blocks
+            think: {
+              component: ({ children }) => (
+                <div className="bg-gray-700/50 p-3 rounded-lg my-3 border-l-4 border-blue-500">
+                  <div className="text-blue-400 text-xs font-mono mb-2">THINKING PROCESS:</div>
+                  <div className="text-gray-300 text-sm space-y-2">{children}</div>
+                </div>
+              )
+
+              // component: () => null
+            },
+            // Headings hierarchy
+            h1: { component: ({ children }) => <h1 className="text-xl font-bold text-gray-100 mb-3 mt-2">{children}</h1> },
+            h2: { component: ({ children }) => <h2 className="text-lg font-semibold text-gray-100 mb-2 mt-4">{children}</h2> },
+            h3: { component: ({ children }) => <h3 className="text-md font-medium text-gray-200 mb-2 mt-3">{children}</h3> },
+            h4: { component: ({ children }) => <h4 className="text-sm font-medium text-gray-300 mb-1 mt-2">{children}</h4> },
+            // Paragraphs with proper spacing
+            p: { component: ({ children }) => <p className="text-gray-300 mb-3 leading-relaxed">{children}</p> },
+            // Code blocks with proper language detection
             code: {
               component: ({ children, className }) => {
-                const language = className?.replace('lang-', '') || 'plaintext';
+                const language = className?.replace('language-', '') || 'plaintext';
                 return (
-                  <div className="bg-gray-900 text-gray-100 p-3 rounded-md overflow-auto shadow-inner">
-                    <code className={`language-${language}`}>{children}</code>
+                  <div className="bg-gray-900 rounded-md overflow-hidden mb-4 mt-2 shadow-lg">
+                    <div className="flex justify-between items-center px-4 py-2 bg-gray-800 text-gray-400 text-xs">
+                      <span>{language}</span>
+                    </div>
+                    <pre className="p-4 overflow-auto">
+                      <code className={`language-${language} text-sm`}>{children}</code>
+                    </pre>
                   </div>
                 );
-              },
+              }
             },
-            // normal paragraphs → inline spans
-            p: {
-              component: ({ children }) => (
-                <span className="text-gray-300">{children}</span>
-              ),
-            },
-            // top-level headings still blocks
-            h1: {
-              component: ({ children }) => (
-                <h1 className="text-lg font-bold text-gray-100 mb-2">{children}</h1>
-              ),
-            },
-            // “sub-headings” inside lists as inline spans
-            h2: {
-              component: ({ children }) => (
-                <span className="font-semibold text-gray-200">{children}</span>
-              ),
-            },
-            // unordered list
-            ul: {
-              component: ({ children }) => (
-                <ul className="list-disc list-inside text-gray-300 mb-2 pl-5">{children}</ul>
-              ),
-            },
-            // ordered list with padding
-            ol: {
-              component: ({ children }) => (
-                <ol className="list-decimal list-inside text-gray-300 mb-2 pl-2.5">
-                  {children}
-                </ol>
-              ),
-            },
-            // list items
-            li: {
-              component: ({ children }) => (
-                <li className="mb-1 text-gray-300">{children}</li>
-              ),
-            },
-            // blockquotes
-            blockquote: {
-              component: ({ children }) => (
-                <blockquote className="border-l-4 border-blue-500 pl-4 text-gray-400 italic mb-2">
-                  {children}
-                </blockquote>
-              ),
-            },
-          },
+            // Inline code snippets
+            inlineCode: { component: ({ children }) => <code className="bg-gray-700 px-1.5 py-0.5 rounded text-red-300 text-sm">{children}</code> },
+            // Lists with improved spacing
+            ul: { component: ({ children }) => <ul className="list-disc list-inside space-y-1.5 mb-4 pl-4">{children}</ul> },
+            ol: { component: ({ children }) => <ol className="list-decimal list-inside space-y-1.5 mb-4 pl-4">{children}</ol> },
+            li: { component: ({ children }) => <li className="text-gray-300 pl-2">{children}</li> },
+            // Blockquotes with updated styling
+            blockquote: { component: ({ children }) => (
+              <blockquote className="border-l-4 border-green-500 pl-4 text-gray-400 italic my-4 bg-gray-700/20 py-2 rounded-r">
+                {children}
+              </blockquote>
+            )},
+            // Tables support
+            table: { component: ({ children }) => <table className="w-full my-4 bg-gray-700/20 rounded-lg overflow-hidden">{children}</table> },
+            th: { component: ({ children }) => <th className="px-4 py-2 bg-gray-800 text-left text-gray-300 border-b border-gray-600">{children}</th> },
+            td: { component: ({ children }) => <td className="px-4 py-2 border-b border-gray-700/50 text-gray-400">{children}</td> }
+          }
         }}
       >
         {formattedContent}
@@ -190,6 +224,8 @@ const Project = () => {
         }
 
         delete current[parts[parts.length - 1]]; // Delete the file
+        // Auto-save after file deletion
+        autoSave(newTree);
         return newTree;
       });
 
@@ -201,6 +237,8 @@ const Project = () => {
   const renderFileTree = (tree = {}, path = "") => {
     return Object.keys(tree).map((file) => {
       const currentPath = path ? `${path}/${file}` : file;
+      const ext = file.split('.').pop().toLowerCase();
+      const icon = fileIcons[ext] || fileIcons.default;
 
       if (typeof tree[file] === "object" && !tree[file].file) {
         return (
@@ -262,10 +300,10 @@ const Project = () => {
                   return newTree;
                 });
               }}
-              className="flex-grow text-left text-white truncate"
+              className="flex-grow text-left text-white truncate flex items-center gap-2"
               title={file}
             >
-              <i className="ri-file-line text-blue-500"></i> {file}
+              {icon} <span>{file}</span>
             </button>
             <button
               onClick={() => deleteFile(currentPath)}
@@ -317,14 +355,21 @@ const Project = () => {
   }, 1000);
 
   const handleCreateFile = () => {
-    if (!newFileName.trim()) return; // Empty filename allow nahi hoga
-
+    const trimmed = newFileName.trim();
+    if (!trimmed) return;
+    const ext = trimmed.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      alert('Please use a valid file extension: .js, .jsx, .ts, .py, .java, .cpp, .html, .css, .md');
+      return;
+    }
     setFileTree((prevFileTree) => {
-      const newTree = structuredClone(prevFileTree || {}); // ✅ Ensure tree is not undefined
+      const newTree = structuredClone(prevFileTree || {});
 
       // ✅ Agar file already exist nahi karti, toh new file create karo
-      if (!newTree[newFileName]) {
-        newTree[newFileName] = { file: { contents: "" } }; // ✅ Empty file with content
+      if (!newTree[trimmed]) {
+        newTree[trimmed] = { file: { contents: "" } }; // ✅ Empty file with content
+        // Auto-save immediately after file creation
+        autoSave(newTree);
       }
 
       return newTree;
@@ -332,8 +377,8 @@ const Project = () => {
 
     setNewFileName("");
     setIsCreatingFile(false);
-    setCurrentFile(newFileName);
-    setOpenFiles((prevOpenFiles) => [...new Set([...prevOpenFiles, newFileName])]);
+    setCurrentFile(trimmed);
+    setOpenFiles((prevOpenFiles) => [...new Set([...prevOpenFiles, trimmed])]);
   };
 
 
@@ -565,7 +610,6 @@ const Project = () => {
   // Modified CodeMirror component with collaborative features
   const codeMirrorExtensions = [
     EditorState.allowMultipleSelections.of(true),
-    EditorView.lineWrapping,
     detectLanguage(currentFile),
     collaborativeDecorations(remoteCursors),
     EditorView.updateListener.of(update => {
@@ -608,6 +652,8 @@ const Project = () => {
 
       const fileName = parts[parts.length - 1];
       current[fileName] = { file: { contents: newContent } };
+      // Auto-save on code change (debounced)
+      autoSave(newTree);
       return newTree;
     });
 
@@ -1038,13 +1084,13 @@ const Project = () => {
             <div className="bottom flex w-full flex-grow overflow-y-auto">
 
               {currentFile ? (
-                <div className="h-full w-full">
+                <div className="h-full w-full overflow-x-auto">
                   <CodeMirror
                     key={currentFile} // Ensures re-render on file change
                     value={currentFile ? getFileContent(currentFile, fileTree) : ''}
                     theme={THEMES[selectedTheme]}
                     extensions={codeMirrorExtensions}
-                    className=" w-full h-full"
+                    className="w-full h-full min-w-[600px]"
                     height="100%"
                     onChange={(value) => {
                       setFileTree((prevFileTree) => {

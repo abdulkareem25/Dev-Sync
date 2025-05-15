@@ -1,31 +1,28 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { UserContext } from '../context/UserProvider.jsx'
-import axios from '../config/axios'
-import { useNavigate } from 'react-router-dom'
+import React, { useContext, useState, useEffect } from 'react';
+import { UserContext } from '../context/UserProvider.jsx';
+import axios from '../config/axios';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
-  const { user } = useContext(UserContext)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [projectName, setProjectName] = useState('')
-  const [projects, setProjects] = useState([]) // Fix: Renamed from project to projects (better readability)
-  const [loggedInUser, setLoggedInUser] = useState(null) // Fix: Use null instead of []
+  const { user, setUser } = useContext(UserContext);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const [projects, setProjects] = useState([]);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   function createProject(e) {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!user || !user._id) {
-      console.error("User data is not available. Please check if the user is logged in.")
-      return
+      console.error("User data is not available. Please check if the user is logged in.");
+      return;
     }
 
     if (!projectName.trim()) {
-      console.error("Project name is required.")
-      return
+      console.error("Project name is required.");
+      return;
     }
-
-    console.log("Creating project with details:", { projectName, user })
 
     axios.post('/projects/create', {
       name: projectName,
@@ -36,64 +33,90 @@ const Home = () => {
       }
     })
     .then((res) => {
-      console.log("Project created successfully:", res.data)
-      setIsModalOpen(false)
-      setProjectName("")
-      setProjects([...projects, res.data]) // Fix: Update projects list immediately
+      console.log("Project created successfully:", res.data);
+      setIsModalOpen(false);
+      setProjectName("");
+      setProjects([...projects, res.data]);
     })
     .catch((error) => {
-      console.error("Error creating project:", error.response?.data || error.message)
-    })
+      console.error("Error creating project:", error.response?.data || error.message);
+    });
+  }
+
+  // Updated handleLogout to call the backend logout endpoint and clear local storage
+  function handleLogout() {
+    axios.get('/users/logout')
+      .then(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        navigate('/'); // Redirect to login after logout
+      })
+      .catch(err => console.error("Error logging out:", err));
   }
 
   useEffect(() => {
     axios.get('/projects/all')
       .then((res) => {
-        setProjects(res.data.projects) // Fix: Correctly setting projects
+        setProjects(res.data.projects);
       })
-      .catch(err => console.log(err))
-
-    axios.get('/users/all')
-      .then(res => {
-        setLoggedInUser(res.data.loggedInUser) // Fix: Store full user object
-      })
-      .catch(err => console.log(err))
-  }, [])
+      .catch(err => console.log(err));
+  }, []); // Removed fetching `loggedInUser` as `user` from context is used directly
 
   return (
     <main className='text-white bg-gray-900 h-screen'>
-      <header className='p-10 text-5xl font-semibold'>Hello, <span className='text-blue-500'>{loggedInUser?.name}</span></header>
-      <section className='flex items-center justify-center box-border flex-col h-[70%]'>
-        <h1 className='mb-2.5 text-2xl font-semibold'>Create a new Project</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className='bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-7 rounded-lg shadow-md transition-all duration-300 cursor-pointer'>
-          <span className='mr-2'>New Project</span>
-          <i className="ri-add-large-fill"></i>
-        </button>
+      <header className='p-10 text-5xl font-semibold text-center'>
+        Welcome to DevSync AI, <span className='text-blue-500'>{user?.name || 'Guest'}</span>
+      </header>
+      <section className='flex items-center justify-center flex-col h-[70%]'>
+        <h1 className='mb-4 text-3xl font-bold'>Manage Your Projects Seamlessly</h1>
 
-        <h1 className='mb-2 mt-2.5 text-2xl font-semibold'>Your Projects</h1>
-        <div className='flex gap-1 flex-wrap justify-center w-[85%]'>
-          {projects.map((project) => (
-            <div key={project._id}
-              onClick={() => navigate(`/project`, { state: { project } })}
-              className={`project bg-white text-blue-600 hover:bg-blue-200 font-semibold py-3 px-5 rounded-lg shadow-md transition-all duration-300 cursor-pointer flex gap-2 flex-col justify-center h-42 max-w-[250px]
-              ${project.admin?._id === user._id ? 'border-2 border-yellow-500' : ''} // Fix: Corrected admin condition
-              `}>
-              <h1 className='font-bold flex text-center justify-center '>{project.name}</h1>
-              <div className='flex gap-1 justify-center items-center'>
-                <h1>
-                  <i className={project.users.length <= 1 ? "ri-user-fill" : "ri-group-fill"}></i>
-                  {project.users.length <= 1 ? ` Collaborator :` : ` Collaborators :`}
-                </h1>
-                {project.users.length}
-              </div>
-              {/* Fix: Show admin tag only if user is actually the admin */}
-              {project.admin?._id === user._id && (
-                <span className="text-yellow-600 font-bold text-sm text-center">You are the Admin</span>
-              )}
+        {user && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className='bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-7 rounded-lg shadow-md transition-all duration-300 cursor-pointer mb-6'>
+            <span className='mr-2'>Create New Project</span>
+            <i className="ri-add-line"></i>
+          </button>
+        )}
+
+        <div className='absolute top-10 right-10'>
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className='bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition-all duration-300 cursor-pointer'>
+              Logout
+            </button>
+          ) : (
+            <div className='flex gap-4'>
+              <button
+                onClick={() => navigate('/login')}
+                className='bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition-all duration-300 cursor-pointer'>
+                Login
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                className='bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition-all duration-300 cursor-pointer'>
+                Register
+              </button>
             </div>
-          ))}
+          )}
+        </div>
+
+        <h2 className='mt-8 mb-4 text-2xl font-semibold'>Your Projects</h2>
+        <div className='flex gap-4 flex-wrap justify-center w-[85%]'>
+          {projects.length > 0 ? (
+            projects.map((project) => (
+              <div key={project._id}
+                onClick={() => navigate(`/project`, { state: { project } })}
+                className={`project bg-white text-blue-600 hover:bg-blue-200 font-semibold py-3 px-5 rounded-lg shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-center items-center h-40 w-60 border-2 ${user && project.admin?._id === user._id ? 'border-yellow-500' : 'border-gray-300'}`}>
+                <h3 className='text-lg font-bold'>{project.name}</h3>
+                <p className='text-sm'>Admin: {project.admin?.name}</p>
+              </div>
+            ))
+          ) : (
+            <p className='text-gray-400'>No projects found. Create your first project now!</p>
+          )}
         </div>
 
         {isModalOpen && (
@@ -125,8 +148,11 @@ const Home = () => {
           </div>
         )}
       </section>
+      <footer className='text-center py-4 bg-gray-800 text-gray-400'>
+        &copy; 2025 Project Manager. All rights reserved.
+      </footer>
     </main>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
