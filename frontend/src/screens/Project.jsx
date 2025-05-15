@@ -174,6 +174,9 @@ const Project = () => {
   const location = useLocation()
   const { user } = useContext(UserContext)
 
+  // Home page pe jane ka button (top right corner, always visible)
+  const navigate = useNavigate();
+
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedUserIds, setSelectedUserIds] = useState([])
@@ -719,12 +722,20 @@ const Project = () => {
 
   return (
     <main className="h-screen w-screen flex bg-gray-950 text-white">
+      {/* Home button (top right) */}
       <section className="left relative h-full flex flex-col w-[350px] min-w-[300px] max-w-[400px] bg-gray-800 shadow-lg">
         <div className="chats h-full flex flex-col">
           <header className="relative flex items-center justify-between w-full bg-gray-950 p-4 h-14 shadow-md">
+              <button
+                onClick={() => navigate('/home')}
+                className="text-blue-500 text-2xl hover:text-blue-400 font-bold transition-all duration-300"
+                title="Go to Home"
+              >
+                <i className="ri-home-4-line"></i>
+              </button>
             <div className="w-full">
               <h2
-                className="text-white text-lg font-semibold truncate cursor-pointer"
+                className="text-white text-lg font-semibold truncate cursor-pointer ml-2"
                 title={project.name}
               >
                 {project.name}
