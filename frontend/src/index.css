@@ -84,3 +84,7 @@ pre div::-webkit-scrollbar{
 think{
   display: none;
 }
+
+.tab::-webkit-scrollbar{
+  display: none;
+}

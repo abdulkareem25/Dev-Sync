@@ -771,7 +771,7 @@ const Project = () => {
     const newContent = value;
     const cursorPos = viewUpdate.state.selection.ranges[0].from;
 
-    // Update local file tree state
+    // Update local file tree
     setFileTree(prev => {
       const newTree = structuredClone(prev);
       const parts = currentFile.split('/');
@@ -823,7 +823,7 @@ const Project = () => {
   const codeMirrorExtensions = (filePath) => [
     EditorState.allowMultipleSelections.of(true),
     detectLanguage(filePath),
-    EditorView.lineWrapping,
+    // EditorView.lineWrapping,
     EditorView.updateListener.of(update => {
       if (update.docChanged || update.selectionSet) {
         const cursorPos = update.state.selection.main.head;
@@ -934,9 +934,9 @@ const Project = () => {
 
 
   return (
-    <main className="h-screen w-screen flex bg-gradient-to-br from-gray-900 to-blue-900/20 text-white overflow-hidden">
+    <main className="h-screen w-screen flex bg-gradient-to-br from-gray-900 to-blue-900/20 text-white ">
       {/* Left Chat Section */}
-      <section className="left relative h-full flex flex-col w-[350px] min-w-[250px] bg-gray-800/80 shadow-2xl backdrop-blur-sm">
+      <section className="left relative h-full flex flex-col w-[350px] bg-gray-800/80 shadow-2xl backdrop-blur-sm">
         <div className="chats h-full flex flex-col">
           {/* Chat Header */}
           <header className="flex items-center justify-between w-full bg-gray-900/90 p-4 h-16 border-b border-gray-700 backdrop-blur-sm">
@@ -1132,7 +1132,7 @@ const Project = () => {
       </section>
 
       {/* Right Editor Section */}
-      <section className="right flex flex-grow h-full bg-gray-900/80 backdrop-blur-sm">
+      <section className="right flex flex-1 h-full bg-gray-900/80 backdrop-blur-sm min-w-0">
         {/* File Explorer */}
         <div className="explorer h-full w-52 flex flex-col border-r border-gray-700">
           <div className="flex items-center justify-between p-4 h-16 border-b border-gray-700">
@@ -1156,60 +1156,76 @@ const Project = () => {
         </div>
 
         {/* Code Editor */}
-        <div className="editor flex-grow flex flex-col min-w-0">
-          {/* Editor Tabs */}
-          <div className="tabs-bar flex items-center h-16 px-4 bg-gray-900 border-b border-gray-700">
-            <div className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600">
-              {openFiles.map((file) => (
-                <div
-                  key={file}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 ${currentFile === file
-                    ? "border-blue-500 bg-gray-800"
-                    : "border-transparent hover:bg-gray-700"
-                    }`}
-                >
-                  <i className="ri-file-line text-blue-400"></i>
-                  <span className="text-white truncate max-w-[150px]">{file}</span>
-                  <button
-                    onClick={() => handleCloseTab(file)}
-                    className="text-gray-400 hover:text-red-400 ml-2 transition-all"
-                  >
-                    <i className="ri-close-line"></i>
-                  </button>
-                </div>
-              ))}
+        <div className="editor flex flex-col flex-1 w-[calc(100%-13rem)] min-w-0">
+          {/* Enhanced Tabs Bar */}
+          <div className="tabs-bar flex items-center h-16 w-full px-4 bg-gray-900 border-b border-gray-700">
+            {/* Scrollable File Tabs */}
+            <div className="tab flex-1 overflow-x-auto whitespace-nowrap min-w-0">
+              <div className="opened-files flex items-center gap-1 p-1 w-max">
+                {openFiles.map((file) => {
+                  const extension = file.split('.').pop().toLowerCase();
+                  const icon = fileIcons[extension] || fileIcons.default;
+
+                  return (
+                    <div
+                      key={file}
+                      className={`flex items-center gap-2 px-3 py-2 border-r border-gray-700 group ${currentFile === file
+                          ? "bg-gray-800 text-white"
+                          : "bg-gray-900 hover:bg-gray-800 text-gray-400"
+                        }`}
+                    >
+                      <span className="flex-shrink-0">{icon}</span>
+                      <span className="text-sm truncate max-w-[160px]">{file}</span>
+                      <button
+                        onClick={() => handleCloseTab(file)}
+                        className="ml-2 text-transparent group-hover:text-gray-400 hover:text-white flex-shrink-0"
+                      >
+                        <i className="ri-close-line text-sm"></i>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="ml-auto flex gap-3">
+            {/* Control Buttons Group */}
+            <div className="control-buttons flex items-center gap-3 bg-gray-900 ml-4 flex-shrink-0">
               <button
                 onClick={handleInstall}
-                className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600/40 text-blue-400 rounded-lg transition-all"
+                className="p-2 hover:bg-gray-700 rounded-lg transition-all"
                 disabled={isInstalling}
               >
-                {isInstalling ? <i className="ri-loader-4-line animate-spin"></i> : "Install"}
+                {isInstalling ? (
+                  <i className="ri-loader-4-line animate-spin text-blue-400"></i>
+                ) : (
+                  <i className="ri-download-line text-blue-400"></i>
+                )}
               </button>
 
               <button
                 onClick={handleRun}
-                className="px-4 py-2 bg-green-600/30 hover:bg-green-600/40 text-green-400 rounded-lg transition-all"
+                className="p-2 hover:bg-gray-700 rounded-lg transition-all"
               >
-                Run
+                <i className="ri-play-line text-green-400"></i>
               </button>
 
-              <select
-                value={selectedTheme}
-                onChange={(e) => setSelectedTheme(e.target.value)}
-                className="bg-gray-800 text-blue-400 px-3 rounded-lg cursor-pointer"
-              >
-                {Object.keys(THEMES).map(theme => (
-                  <option key={theme} value={theme}>{theme}</option>
-                ))}
-              </select>
+              {/* <div className="flex items-center gap-2 bg-gray-800 px-2 py-1 rounded-lg">
+                <i className="ri-brush-line text-blue-400 text-sm"></i>
+                <select
+                  value={selectedTheme}
+                  onChange={(e) => setSelectedTheme(e.target.value)}
+                  className="bg-transparent text-blue-400 text-sm cursor-pointer"
+                >
+                  {Object.keys(THEMES).map(theme => (
+                    <option key={theme} value={theme}>{theme}</option>
+                  ))}
+                </select>
+              </div> */}
             </div>
           </div>
 
           {/* Code Editor Content */}
-          <div className="editor-content relative min-w-0 overflow-y-auto h-[calc(100%-4rem)]">
+          <div className="editor-content relative overflow-y-auto h-[calc(100%-4rem)]">
             {currentFile ? (
               <CodeMirror
                 key={currentFile + selectedTheme} // Force remount on theme/file change
