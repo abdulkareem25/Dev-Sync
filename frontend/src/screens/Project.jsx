@@ -1209,15 +1209,15 @@ const Project = () => {
           </div>
 
           {/* Code Editor Content */}
-          <div className="editor-content flex-grow relative min-w-0">
+          <div className="editor-content relative min-w-0 overflow-y-auto h-[calc(100%-4rem)]">
             {currentFile ? (
               <CodeMirror
                 key={currentFile + selectedTheme} // Force remount on theme/file change
                 value={getFileContent(currentFile, fileTree)}
                 theme={THEMES[selectedTheme]}
                 extensions={codeMirrorExtensions(currentFile)}
-                className="h-full overflow-x-auto"
-                height="100%"
+                className="h-full"
+                // height="100%"
                 onChange={handleCodeChange}
                 basicSetup={{
                   lineNumbers: true,
@@ -1291,7 +1291,7 @@ const Project = () => {
                 <iframe
                   key={reloadKey}
                   src={iframeUrl}
-                  className="w-full h-full bg-white"
+                  className="w-full h-[calc(100%-4rem)] bg-white"
                   title="Preview"
                 />
               </div>
