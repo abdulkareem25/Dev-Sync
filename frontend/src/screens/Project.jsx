@@ -216,31 +216,30 @@ const Project = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  const deleteFile = (filePath) => {
-    if (window.confirm(`Are you sure you want to delete "${filePath}"?`)) {
-      setFileTree((prevFileTree) => {
-        const newTree = structuredClone(prevFileTree);
-        const parts = filePath.split("/");
-        let current = newTree;
+  // const deleteFile = (filePath) => {
+  //   if (window.confirm(`Are you sure you want to delete "${filePath}"?`)) {
+  //     setFileTree((prevFileTree) => {
+  //       const newTree = structuredClone(prevFileTree);
+  //       const parts = filePath.split("/");
+  //       let current = newTree;
 
-        for (let i = 0; i < parts.length - 1; i++) {
-          if (!current[parts[i]]) return prevFileTree; // File path invalid
-          current = current[parts[i]];
-        }
+  //       for (let i = 0; i < parts.length - 1; i++) {
+  //         if (!current[parts[i]]) return prevFileTree; // File path invalid
+  //         current = current[parts[i]];
+  //       }
 
-        delete current[parts[parts.length - 1]]; // Delete the file
-        // Auto-save after file deletion
-        autoSave(newTree);
-        return newTree;
-      });
+  //       delete current[parts[parts.length - 1]]; // Delete the file
+  //       // Auto-save after file deletion
+  //       autoSave(newTree);
+  //       return newTree;
+  //     });
 
-      setOpenFiles((prevOpenFiles) => prevOpenFiles.filter((file) => file !== filePath));
-      if (currentFile === filePath) setCurrentFile(null); // Reset current file if deleted
-    }
-  };
+  //     setOpenFiles((prevOpenFiles) => prevOpenFiles.filter((file) => file !== filePath));
+  //     if (currentFile === filePath) setCurrentFile(null); // Reset current file if deleted
+  //   }
+  // };
 
   const [contextMenu, setContextMenu] = useState(null);
-  const [renamingItem, setRenamingItem] = useState(null);
   const [creationType, setCreationType] = useState(null); // 'file' or 'folder'
   const [creationPath, setCreationPath] = useState('');
   const [creationContext, setCreationContext] = useState({
@@ -248,30 +247,71 @@ const Project = () => {
     parentPath: null,
     name: ''
   });
-
+  
   const creationInputRef = useRef(null);
-
+  
   // Context Menu Component
   const ContextMenu = ({ position, targetPath, isFolder }) => {
+    const [renameInput, setRenameInput] = useState(targetPath ? targetPath.split('/').pop() : "");
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [renamingItem, setRenamingItem] = useState(null);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+      if (isRenaming && targetPath) {
+        setRenameInput(targetPath.split('/').pop());
+        setTimeout(() => {
+          if (inputRef.current) inputRef.current.focus();
+        }, 0);
+      }
+      // eslint-disable-next-line
+    }, [isRenaming, targetPath]);
+
     const handleAction = (action) => {
       switch (action) {
-        case 'newFile':
-          setCreationType('file');
-          setCreationPath(targetPath);
-          break;
-        case 'newFolder':
-          setCreationType('folder');
-          setCreationPath(targetPath);
-          break;
         case 'rename':
           setRenamingItem(targetPath);
+          setIsRenaming(true);
           break;
         case 'delete':
           deleteFileOrFolder(targetPath);
+          setContextMenu(null);
           break;
       }
-      setContextMenu(null);
+      if (action !== 'rename') setContextMenu(null);
     };
+
+    const handleRenameSubmit = (e) => {
+      e.preventDefault();
+      if (renameInput.trim() && targetPath) {
+        // Compose new path
+        const parts = targetPath.split('/');
+        parts.pop();
+        const newPath = parts.length ? parts.join('/') + '/' + renameInput.trim() : renameInput.trim();
+        handleRename(targetPath, newPath);
+        setIsRenaming(false);
+        setRenamingItem(null);
+        setContextMenu(null);
+      }
+    };
+
+    // Prevent blinking: only close on outside click, not onBlur of input
+    useEffect(() => {
+      if (!isRenaming) return;
+      function handleClickOutside(event) {
+        if (inputRef.current && !inputRef.current.contains(event.target)) {
+          setIsRenaming(false);
+          setRenamingItem(null);
+          setContextMenu(null);
+        }
+      }
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, [isRenaming]);
+
+    if (!position) return null;
 
     return (
       <div
@@ -279,7 +319,19 @@ const Project = () => {
         style={{ left: position.x, top: position.y }}
       >
         <div className="text-white min-w-[160px]">
-          {!isFolder && (
+          {isRenaming ? (
+            <form onSubmit={handleRenameSubmit} className="px-4 py-2">
+              <input
+                ref={inputRef}
+                autoFocus
+                type="text"
+                value={renameInput}
+                onChange={e => setRenameInput(e.target.value)}
+                className="bg-gray-800 text-white px-2 py-1 rounded text-sm w-32"
+              />
+              <button type="submit" className="hidden">Rename</button>
+            </form>
+          ) : (
             <>
               <button
                 onClick={() => handleAction('rename')}
@@ -292,22 +344,6 @@ const Project = () => {
                 className="w-full px-4 py-2 text-left hover:bg-gray-700 text-red-400"
               >
                 Delete
-              </button>
-            </>
-          )}
-          {isFolder && (
-            <>
-              <button
-                onClick={() => handleAction('newFile')}
-                className="w-full px-4 py-2 text-left hover:bg-gray-700"
-              >
-                New File
-              </button>
-              <button
-                onClick={() => handleAction('newFolder')}
-                className="w-full px-4 py-2 text-left hover:bg-gray-700"
-              >
-                New Folder
               </button>
             </>
           )}
@@ -346,7 +382,13 @@ const Project = () => {
 
           return (
             <div key={fullPath} className="tree-item">
-              <div className="group flex items-center gap-2 hover:bg-gray-700 p-1 rounded relative">
+              <div
+                className="group flex items-center gap-2 hover:bg-gray-700 p-1 rounded relative"
+                onContextMenu={e => {
+                  e.preventDefault();
+                  setContextMenu({ position: { x: e.clientX, y: e.clientY }, targetPath: fullPath, isFolder });
+                }}
+              >
                 <button
                   className="flex items-center gap-2 flex-1"
                   onClick={() => {
@@ -364,9 +406,8 @@ const Project = () => {
                 >
                   {isFolder ? (
                     <i
-                      className={`ri-folder-${
-                        openFolders.includes(fullPath) ? 'open' : 'close'
-                      }-fill text-yellow-500`}
+                      className={`ri-folder-${openFolders.includes(fullPath) ? 'open' : 'close'
+                        }-fill text-yellow-500`}
                     />
                   ) : (
                     getFileIcon(name)
@@ -377,7 +418,7 @@ const Project = () => {
                 {isFolder && (
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         setCreationContext({
                           type: 'file',
@@ -390,7 +431,7 @@ const Project = () => {
                       <i className="ri-file-add-line text-sm" />
                     </button>
                     <button
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         setCreationContext({
                           type: 'folder',
@@ -541,28 +582,36 @@ const Project = () => {
     }
   };
 
-  const handleRename = (oldPath, newName) => {
-    if (!newName || newName.includes('/')) {
+  const handleRename = (oldPath, newPath) => {
+    if (!newPath || newPath.includes('/../') || newPath.endsWith('/')) {
       alert('Invalid name');
       return;
     }
     setFileTree(prev => {
       const newTree = structuredClone(prev);
-      const parts = oldPath.split('/');
-      const oldName = parts.pop();
-      let current = newTree;
-      for (const part of parts) {
-        if (!current[part]) break;
-        current = current[part];
+      const oldParts = oldPath.split('/');
+      const newParts = newPath.split('/');
+      const oldName = oldParts.pop();
+      const newName = newParts.pop();
+      let currentOld = newTree;
+      let currentNew = newTree;
+      for (const part of oldParts) {
+        if (!currentOld[part]) return prev;
+        currentOld = currentOld[part];
       }
-      if (current[oldName]) {
-        current[newName] = current[oldName];
-        delete current[oldName];
+      for (const part of newParts) {
+        if (!currentNew[part]) currentNew[part] = {};
+        currentNew = currentNew[part];
+      }
+      if (currentOld[oldName]) {
+        currentNew[newName] = currentOld[oldName];
+        delete currentOld[oldName];
       }
       return newTree;
     });
-    setOpenFiles(prev => prev.map(file => file === oldPath ? newName : file));
-    setCurrentFile(prev => prev === oldPath ? newName : prev);
+    setOpenFiles(prev => prev.map(file => file === oldPath ? newPath : file));
+    setCurrentFile(prev => prev === oldPath ? newPath : prev);
+    setOpenFolders(prev => prev.map(folder => folder === oldPath ? newPath : folder));
   };
 
   const deleteFileOrFolder = (path) => {
@@ -622,58 +671,6 @@ const Project = () => {
       console.log("Error in auto-save:", err);
     });
   }, 1000);
-
-  // const handleFileCreate = () => {
-  //   const trimmed = newFileName.trim();
-  //   if (!trimmed) return;
-  //   const ext = trimmed.split('.').pop().toLowerCase();
-  //   if (!allowedExtensions.includes(ext)) {
-  //     alert('Please use a valid file extension: .js, .jsx, .ts, .py, .java, .cpp, .html, .css, .md');
-  //     return;
-  //   }
-  //   setFileTree((prevFileTree) => {
-  //     const newTree = structuredClone(prevFileTree || {});
-
-  //     // ✅ Agar file already exist nahi karti, toh new file create karo
-  //     if (!newTree[trimmed]) {
-  //       newTree[trimmed] = { file: { contents: "" } }; // ✅ Empty file with content
-  //       // Auto-save immediately after file creation
-  //       autoSave(newTree);
-  //     }
-
-  //     return newTree;
-  //   });
-
-  //   setNewFileName("");
-  //   setIsCreatingFile(false);
-  //   setCurrentFile(trimmed);
-  //   setOpenFiles((prevOpenFiles) => [...new Set([...prevOpenFiles, trimmed])]);
-  // };
-
-
-  // const handleCreateFolder = () => {
-  //   if (!newFolderName.trim()) return;
-
-  //   setFileTree((prevFileTree) => {
-  //     const newTree = structuredClone(prevFileTree);
-  //     const parts = newFolderName.split("/");
-  //     let current = newTree;
-
-  //     // ✅ Ensure all parent folders exist
-  //     for (let i = 0; i < parts.length; i++) {
-  //       if (!current[parts[i]] || typeof current[parts[i]] !== "object") {
-  //         current[parts[i]] = {}; // Creates folder if missing
-  //       }
-  //       current = current[parts[i]];
-  //     }
-
-  //     return newTree;
-  //   });
-
-  //   setNewFolderName("");
-  //   setIsCreatingFolder(false);
-  //   setOpenFolders((prevOpenFolders) => [...new Set([...prevOpenFolders, newFolderName])]);
-  // };
 
   const handleUserClick = (id) => {
     setSelectedUserIds(prevSelectedUserIds => {
@@ -1731,6 +1728,15 @@ const Project = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Render context menu if it exists */}
+      {contextMenu && (
+        <ContextMenu
+          position={contextMenu.position}
+          targetPath={contextMenu.targetPath}
+          isFolder={contextMenu.isFolder}
+        />
       )}
     </main>
   );
