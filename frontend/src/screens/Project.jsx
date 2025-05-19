@@ -788,7 +788,9 @@ const Project = () => {
     setIsInstalling(true);
 
     try {
-      await webContainer.mount(fileTree);
+      const sanitizedTree = sanitizeFileTree(fileTree);
+      console.log("Sanitized tree before mount:", JSON.stringify(sanitizedTree, null, 2));
+      await webContainer.mount(sanitizedTree);
       const installProcess = await webContainer.spawn("npm", ["install"]);
 
       installProcess.output.pipeTo(new WritableStream({
@@ -812,7 +814,8 @@ const Project = () => {
     }
 
     try {
-      await webContainer.mount(fileTree);
+      const sanitizedTree = sanitizeFileTree(fileTree);
+      await webContainer.mount(sanitizedTree);
       const newProcess = await webContainer.spawn("npm", ["start"]);
       setRunProcess(newProcess);
 
@@ -871,7 +874,7 @@ const Project = () => {
       let current = newTree;
 
       // Navigate to the file location in the tree
-      for (let i = 0; i < parts.length - 1; i++) {
+      for (let i = 0; i < parts.length; i++) {
         if (!current[parts[i]]) current[parts[i]] = {};
         current = current[parts[i]];
       }
@@ -1083,6 +1086,34 @@ const Project = () => {
     setIsCreatingFolder(false);
   };
 
+  // Utility: Sanitize file tree for WebContainer
+  function sanitizeFileTree(tree) {
+    // Always return an object, never undefined/null
+    if (!tree || typeof tree !== 'object' || Array.isArray(tree)) return {};
+
+    // --- Unwrap single top-level folder (e.g., { Backend: { ... } }) ---
+    const keys = Object.keys(tree);
+    if (keys.length === 1 && typeof tree[keys[0]] === 'object' && !Array.isArray(tree[keys[0]])) {
+      // If the only key is a folder, unwrap it
+      return sanitizeFileTree(tree[keys[0]]);
+    }
+
+    const result = {};
+    for (const [key, value] of Object.entries(tree)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        if (value.file && typeof value.file.contents === 'string') {
+          // File node
+          result[key] = { file: { contents: value.file.contents } };
+        } else {
+          // Folder node (recursively sanitize)
+          result[key] = sanitizeFileTree(value);
+        }
+      }
+      // If value is not an object or is null/array, skip it (invalid node)
+    }
+    return result;
+  }
+
   useEffect(() => {
     initializeSocket(project._id)
 
@@ -1199,7 +1230,8 @@ const Project = () => {
     if (!webContainer || !isInstalled) return;
     async function updateFiles() {
       try {
-        await webContainer.mount(fileTree); // Sirf updated files mount karo
+        const sanitizedTree = sanitizeFileTree(fileTree);
+        await webContainer.mount(sanitizedTree);
         console.log("Files updated in container without restart");
       } catch (error) {
         console.error("Error updating files:", error);
