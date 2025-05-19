@@ -28,6 +28,8 @@ import { Icon } from '@iconify/react';
 
 const dracula = draculaInit();
 
+const CURSOR_TIMEOUT = 2000; 
+
 const languageExtensions = {
   js: javascript(),
   jsx: javascript({ jsx: true }),
@@ -50,8 +52,6 @@ const THEMES = {
   material,
   githubDark
 };
-
-const CURSOR_TIMEOUT = 2000; // 2 seconds
 
 // ICON MAP for file extensions
 const fileIcons = {
@@ -433,7 +433,6 @@ const Project = () => {
   //   setOpenFolders((prevOpenFolders) => [...new Set([...prevOpenFolders, newFolderName])]);
   // };
 
-
   const handleUserClick = (id) => {
     setSelectedUserIds(prevSelectedUserIds => {
       const newSelectedUserIds = new Set(prevSelectedUserIds)
@@ -470,7 +469,6 @@ const Project = () => {
       });
   }
 
-
   function getColorForSender(sender) {
     let hash = 0
     for (let i = 0; i < sender.length; i++) {
@@ -479,7 +477,6 @@ const Project = () => {
     const hue = Math.abs(hash) % 360
     return `hsl(${hue}, 100%, 80%)`
   }
-
 
   const send = (message) => {
     const trimmedMessage = message.trim();
@@ -495,101 +492,15 @@ const Project = () => {
     saveMessageToDB(outgoingMessage);
   };
 
-  useEffect(() => {
-    initializeSocket(project._id)
-
-    if (!webContainer) {
-      getWebContainer().then(container => {
-        setWebContainer(container);
-        console.log("Container Started");
-      })
-    }
-
-    receiveMessage('project-message', data => {
-      console.log("Received Data:", data);
-
-      try {
-        // Save all messages but only process non-AI messages
-        if (data.sender._id === 'ai') {
-          saveMessageToDB(data);
-          setMessages(prev => [...prev, data]);
-        } else {
-          // Handle normal user messages
-          setMessages(prev => [...prev, data]);
-        }
-      } catch (error) {
-        console.error("Error handling message:", error);
-      }
+  const throttledCursorUpdate = throttle((cursorPos) => {
+    setLocalCursor(cursorPos);
+    sendMessage("CURSOR_UPDATE", {
+      userId: user._id,
+      cursorPos,
+      filePath: currentFile,
+      name: user.name,
     });
-
-    axios.get(`/projects/get-project/${location.state.project._id}`)
-      .then(res => {
-        const projectData = res.data.project;
-        setProject(projectData);
-        setFileTree(projectData.fileTree || {});
-
-        // Handle messages with null check
-        const messages = projectData.messages || [];
-        const uniqueMessages = messages.reduce((acc, current) => {
-          const exists = acc.some(item =>
-            item.message === current.message &&
-            item.sender._id === current.sender._id &&
-            item.createdAt === current.createdAt
-          );
-          return exists ? acc : [...acc, current];
-        }, []);
-
-        setMessages(uniqueMessages);
-      })
-
-    axios.get('/users/all')
-      .then(res => {
-        setUsers(res.data.users)
-      })
-      .catch(err => {
-        console.log(err);
-      })
-
-    // Listen for remote changes
-    receiveMessage('CODE_CHANGE', ({ content, filePath, cursorPos, userId }) => {
-      if (userId !== user._id) {
-        setFileTree(prev => {
-          const newTree = structuredClone(prev);
-          const parts = filePath.split('/');
-          let current = newTree;
-
-          for (let i = 0; i < parts.length - 1; i++) {
-            current = current[parts[i]] = current[parts[i]] || {};
-          }
-
-          const fileName = parts[parts.length - 1];
-          current[fileName] = { file: { contents: content } };
-          return newTree;
-        });
-      }
-    });
-
-    receiveMessage('CURSOR_UPDATE', ({ userId, cursorPos, filePath, name }) => {
-      if (userId !== user._id && filePath === currentFile) {
-        setRemoteCursors((prev) => ({
-          ...prev,
-          [userId]: {
-            pos: cursorPos,
-            color: getColorForSender(userId),
-            name: name,
-            lastActive: Date.now(),
-          },
-        }));
-      }
-    });
-
-    receiveMessage('TYPING_STATUS', ({ userId, isTyping }) => {
-      setCollaborators(prev => ({
-        ...prev,
-        [userId]: { ...prev[userId], isTyping }
-      }));
-    });
-  }, [])
+  }, 100);
 
   // Custom cursor decoration extension
   const collaborativeDecorations = (cursors) => {
@@ -606,7 +517,6 @@ const Project = () => {
       return Decoration.set(decorations, true);
     });
   };
-
 
   class CursorWidget extends WidgetType {
     constructor(userId, color, name) {
@@ -628,77 +538,11 @@ const Project = () => {
       // span.appendChild(tooltip); // Removed JS tooltip, only CSS tooltip remains
       return span;
     }
-
+    
     ignoreEvent() {
       return true;
     }
   }
-
-  // Auto-scroll to bottom whenever messages update
-  useEffect(() => {
-    if (messageBoxRef.current) {
-      setTimeout(() => {
-        messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
-      }, 0);
-    }
-  }, [messages]);
-
-  // collaborators normal karne ke liye
-  useEffect(() => {
-    if (!isModalOpen) {
-      setSelectedUserIds(new Set()); // Modal band hone pe selectedUserIds empty ho jayega
-    }
-  }, [isModalOpen]);
-
-  useEffect(() => {
-    if (!webContainer || !isInstalled) return;
-    async function updateFiles() {
-      try {
-        await webContainer.mount(fileTree); // Sirf updated files mount karo
-        console.log("Files updated in container without restart");
-      } catch (error) {
-        console.error("Error updating files:", error);
-      }
-    }
-    updateFiles();
-  }, [fileTree]); // Server restart nahi hoga, sirf file update hogi
-
-  // Clean up inactive cursors
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRemoteCursors((prev) => {
-        const now = Date.now();
-        const filtered = {};
-        Object.entries(prev).forEach(([userId, cursor]) => {
-          if (now - (cursor.lastActive || 0) < CURSOR_TIMEOUT) {
-            filtered[userId] = cursor;
-          }
-        });
-        return filtered;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (message.trim()) {
-        send(message.trim());
-        setMessage('');
-        e.target.style.height = 'auto';
-      }
-    }
-  };
-
-  const handleSend = () => {
-    if (message.trim()) {
-      send(message.trim());
-      setMessage('');
-      const textarea = document.querySelector('textarea');
-      if (textarea) textarea.style.height = 'auto';
-    }
-  };
 
   const handleInstall = async () => {
     if (isInstalling || !webContainer) return;
@@ -764,7 +608,6 @@ const Project = () => {
   );
 
   // Add these inside the Project component
-
   const handleCodeChange = (value, viewUpdate) => {
     if (!currentFile || !viewUpdate) return;
 
@@ -932,6 +775,191 @@ const Project = () => {
     setIsCreatingFile(false);
   };
 
+  const handleFolderCreate = () => {
+    const trimmedName = newFolderName.trim();
+    if (!trimmedName) {
+      setIsCreatingFolder(false);
+      return;
+    }
+    // Split path into directories
+    const pathParts = trimmedName.split('/');
+    const folderName = pathParts.pop();
+    const directories = pathParts;
+    setFileTree(prev => {
+      const newTree = structuredClone(prev);
+      let currentLevel = newTree;
+      // Navigate through/create directories
+      directories.forEach(dir => {
+        if (!currentLevel[dir]) {
+          currentLevel[dir] = {};
+        }
+        currentLevel = currentLevel[dir];
+      });
+      // Create folder if it doesn't exist
+      if (!currentLevel[folderName]) {
+        currentLevel[folderName] = {};
+        // Auto-save after creation
+        autoSave(newTree);
+        // Open parent folders
+        setOpenFolders(prev => [
+          ...new Set([...prev, ...directories])
+        ]);
+      }
+      return newTree;
+    }
+    );
+    // Set as current file and add to open files
+    const fullPath = trimmedName;
+    setCurrentFile(fullPath);
+    setOpenFiles(prev => [...new Set([...prev, fullPath])]);
+    setNewFolderName("");
+    setIsCreatingFolder(false);
+  };
+
+  
+
+
+  useEffect(() => {
+    initializeSocket(project._id)
+
+    if (!webContainer) {
+      getWebContainer().then(container => {
+        setWebContainer(container);
+        console.log("Container Started");
+      })
+    }
+
+    receiveMessage('project-message', data => {
+      console.log("Received Data:", data);
+
+      try {
+        // Save all messages but only process non-AI messages
+        if (data.sender._id === 'ai') {
+          saveMessageToDB(data);
+          setMessages(prev => [...prev, data]);
+        } else {
+          // Handle normal user messages
+          setMessages(prev => [...prev, data]);
+        }
+      } catch (error) {
+        console.error("Error handling message:", error);
+      }
+    });
+
+    axios.get(`/projects/get-project/${location.state.project._id}`)
+      .then(res => {
+        const projectData = res.data.project;
+        setProject(projectData);
+        setFileTree(projectData.fileTree || {});
+
+        // Handle messages with null check
+        const messages = projectData.messages || [];
+        const uniqueMessages = messages.reduce((acc, current) => {
+          const exists = acc.some(item =>
+            item.message === current.message &&
+            item.sender._id === current.sender._id &&
+            item.createdAt === current.createdAt
+          );
+          return exists ? acc : [...acc, current];
+        }, []);
+
+        setMessages(uniqueMessages);
+      })
+
+    axios.get('/users/all')
+      .then(res => {
+        setUsers(res.data.users)
+      })
+      .catch(err => {
+        console.log(err);
+      })
+
+    // Listen for remote changes
+    receiveMessage('CODE_CHANGE', ({ content, filePath, cursorPos, userId }) => {
+      if (userId !== user._id) {
+        setFileTree(prev => {
+          const newTree = structuredClone(prev);
+          const parts = filePath.split('/');
+          let current = newTree;
+
+          for (let i = 0; i < parts.length - 1; i++) {
+            current = current[parts[i]] = current[parts[i]] || {};
+          }
+
+          const fileName = parts[parts.length - 1];
+          current[fileName] = { file: { contents: content } };
+          return newTree;
+        });
+      }
+    });
+
+    receiveMessage('CURSOR_UPDATE', ({ userId, cursorPos, filePath, name }) => {
+      if (userId !== user._id && filePath === currentFile) {
+        setRemoteCursors((prev) => ({
+          ...prev,
+          [userId]: {
+            pos: cursorPos,
+            color: getColorForSender(userId),
+            name: name,
+            lastActive: Date.now(),
+          },
+        }));
+      }
+    });
+
+    receiveMessage('TYPING_STATUS', ({ userId, isTyping }) => {
+      setCollaborators(prev => ({
+        ...prev,
+        [userId]: { ...prev[userId], isTyping }
+      }));
+    });
+  }, [])
+
+  // Auto-scroll to bottom whenever messages update
+  useEffect(() => {
+    if (messageBoxRef.current) {
+      setTimeout(() => {
+        messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
+      }, 0);
+    }
+  }, [messages]);
+
+  // collaborators normal karne ke liye
+  useEffect(() => {
+    if (!isModalOpen) {
+      setSelectedUserIds(new Set()); // Modal band hone pe selectedUserIds empty ho jayega
+    }
+  }, [isModalOpen]);
+  
+  useEffect(() => {
+    if (!webContainer || !isInstalled) return;
+    async function updateFiles() {
+      try {
+        await webContainer.mount(fileTree); // Sirf updated files mount karo
+        console.log("Files updated in container without restart");
+      } catch (error) {
+        console.error("Error updating files:", error);
+      }
+    }
+    updateFiles();
+  }, [fileTree]); // Server restart nahi hoga, sirf file update hogi
+
+  // Clean up inactive cursors
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRemoteCursors((prev) => {
+        const now = Date.now();
+        const filtered = {};
+        Object.entries(prev).forEach(([userId, cursor]) => {
+          if (now - (cursor.lastActive || 0) < CURSOR_TIMEOUT) {
+            filtered[userId] = cursor;
+          }
+        });
+        return filtered;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <main className="h-screen w-screen flex bg-gradient-to-br from-gray-900 to-blue-900/20 text-white ">
