@@ -28,7 +28,7 @@ import { Icon } from '@iconify/react';
 
 const dracula = draculaInit();
 
-const CURSOR_TIMEOUT = 2000; 
+const CURSOR_TIMEOUT = 2000;
 
 const languageExtensions = {
   js: javascript(),
@@ -239,111 +239,353 @@ const Project = () => {
     }
   };
 
-  const renderFileTree = (tree = {}, path = "") => {
+  const [contextMenu, setContextMenu] = useState(null);
+  const [renamingItem, setRenamingItem] = useState(null);
+  const [creationType, setCreationType] = useState(null); // 'file' or 'folder'
+  const [creationPath, setCreationPath] = useState('');
+  const [creationContext, setCreationContext] = useState({
+    type: null, // 'file' or 'folder'
+    parentPath: null,
+    name: ''
+  });
+
+  const creationInputRef = useRef(null);
+
+  // Context Menu Component
+  const ContextMenu = ({ position, targetPath, isFolder }) => {
+    const handleAction = (action) => {
+      switch (action) {
+        case 'newFile':
+          setCreationType('file');
+          setCreationPath(targetPath);
+          break;
+        case 'newFolder':
+          setCreationType('folder');
+          setCreationPath(targetPath);
+          break;
+        case 'rename':
+          setRenamingItem(targetPath);
+          break;
+        case 'delete':
+          deleteFileOrFolder(targetPath);
+          break;
+      }
+      setContextMenu(null);
+    };
+
     return (
-      <>
-        {isCreatingFile && (
-          <div className="file-creation-ui p-2 mb-2">
-            <input
-              type="text"
-              autoFocus
-              value={newFileName}
-              onChange={(e) => setNewFileName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleFileCreate()}
-              onBlur={handleFileCreate}
-              placeholder="New file name"
-              className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg 
-                      focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            {/* <div className="mt-1 text-xs text-gray-400">
-              Allowed extensions: {allowedExtensions.join(', ')}
-            </div> */}
-          </div>
-        )}
-        {Object.keys(tree).map((file) => {
-          const currentPath = path ? `${path}/${file}` : file;
-          const ext = file.split('.').pop().toLowerCase();
-          const icon = fileIcons[ext] || fileIcons.default;
-
-          if (typeof tree[file] === "object" && !tree[file].file) {
-            return (
-              <div key={currentPath} className="folder">
-                <button
-                  onClick={() =>
-                    setOpenFolders((prev) =>
-                      prev.includes(currentPath)
-                        ? prev.filter((f) => f !== currentPath)
-                        : [...prev, currentPath]
-                    )
-                  }
-                  className="folder-name text-lg flex cursor-pointer gap-2 hover:bg-gray-700 w-full p-2 transition-all duration-200"
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    // Add context menu logic here
-                    console.log("Context menu for folder:", currentPath);
-                  }}
-                >
-                  <i className="ri-folder-fill text-yellow-500"></i>
-                  <p
-                    className="font-semibold text-lg truncate w-full flex overflow-hidden whitespace-nowrap"
-                    title={file}
-                  >
-                    {file}
-                  </p>
-                </button>
-                {openFolders.includes(currentPath) && (
-                  <div className="pl-4">{renderFileTree(tree[file], currentPath)}</div>
-                )}
-              </div>
-            );
-          } else {
-            return (
-              <div key={currentPath} className="tree-element flex items-center gap-2 p-2 hover:bg-gray-700 w-full transition-all duration-200">
-                <button
-                  onClick={() => {
-                    setCurrentFile(currentPath);
-                    setOpenFiles((prev) => [...new Set([...prev, currentPath])]);
-
-                    // Ensure new files have valid structure
-                    setFileTree((prevFileTree) => {
-                      const newTree = JSON.parse(JSON.stringify(prevFileTree));
-                      const parts = currentPath.split("/");
-                      let current = newTree;
-
-                      for (let i = 0; i < parts.length - 1; i++) {
-                        if (!current[parts[i]] || typeof current[parts[i]] !== "object") {
-                          current[parts[i]] = {}; // ✅ Ensure parent folder exists
-                        }
-                        current = current[parts[i]];
-                      }
-
-                      // ✅ Ensure file exists
-                      if (!current[parts[parts.length - 1]]) {
-                        current[parts[parts.length - 1]] = { file: { contents: "" } };
-                      }
-
-                      return newTree;
-                    });
-                  }}
-                  className="flex-grow text-left text-white truncate flex items-center gap-2"
-                  title={file}
-                >
-                  {icon} <span>{file}</span>
-                </button>
-                <button
-                  onClick={() => deleteFile(currentPath)}
-                  className="text-red-500 hover:text-red-700 transition-all duration-200"
-                  title="Delete File"
-                >
-                  <i className="ri-delete-bin-line"></i>
-                </button>
-              </div>
-            );
-          }
-        })}
-      </>
+      <div
+        className="fixed bg-gray-900 border border-gray-700 rounded-lg shadow-lg py-2 z-50"
+        style={{ left: position.x, top: position.y }}
+      >
+        <div className="text-white min-w-[160px]">
+          {!isFolder && (
+            <>
+              <button
+                onClick={() => handleAction('rename')}
+                className="w-full px-4 py-2 text-left hover:bg-gray-700"
+              >
+                Rename
+              </button>
+              <button
+                onClick={() => handleAction('delete')}
+                className="w-full px-4 py-2 text-left hover:bg-gray-700 text-red-400"
+              >
+                Delete
+              </button>
+            </>
+          )}
+          {isFolder && (
+            <>
+              <button
+                onClick={() => handleAction('newFile')}
+                className="w-full px-4 py-2 text-left hover:bg-gray-700"
+              >
+                New File
+              </button>
+              <button
+                onClick={() => handleAction('newFolder')}
+                className="w-full px-4 py-2 text-left hover:bg-gray-700"
+              >
+                New Folder
+              </button>
+            </>
+          )}
+        </div>
+      </div>
     );
   };
+
+  // Modified renderFileTree function
+  const renderFileTree = (tree = {}, currentPath = "") => {
+    return (
+      <div className="file-tree">
+        {creationContext.type && creationContext.parentPath === currentPath && (
+          <div className="creation-input pl-4 py-1" ref={creationInputRef}>
+            <input
+              autoFocus
+              type="text"
+              value={creationContext.name}
+              onChange={(e) => setCreationContext(prev => ({
+                ...prev,
+                name: e.target.value
+              }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreate();
+                if (e.key === 'Escape') setCreationContext({ type: null, parentPath: null, name: '' });
+              }}
+              className="bg-gray-800 text-white px-2 py-1 rounded text-sm w-36"
+              placeholder={`New ${creationContext.type} name...`}
+            />
+          </div>
+        )}
+
+        {Object.entries(tree).map(([name, item]) => {
+          const fullPath = currentPath ? `${currentPath}/${name}` : name;
+          const isFolder = typeof item === 'object' && item !== null && !item.file;
+
+          return (
+            <div key={fullPath} className="tree-item">
+              <div className="group flex items-center gap-2 hover:bg-gray-700 p-1 rounded relative">
+                <button
+                  className="flex items-center gap-2 flex-1"
+                  onClick={() => {
+                    if (isFolder) {
+                      setOpenFolders(prev =>
+                        prev.includes(fullPath)
+                          ? prev.filter(p => p !== fullPath)
+                          : [...prev, fullPath]
+                      );
+                    } else {
+                      setCurrentFile(fullPath);
+                      setOpenFiles(prev => prev.includes(fullPath) ? prev : [...prev, fullPath]);
+                    }
+                  }}
+                >
+                  {isFolder ? (
+                    <i
+                      className={`ri-folder-${
+                        openFolders.includes(fullPath) ? 'open' : 'close'
+                      }-fill text-yellow-500`}
+                    />
+                  ) : (
+                    getFileIcon(name)
+                  )}
+                  <span className="truncate">{name}</span>
+                </button>
+
+                {isFolder && (
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCreationContext({
+                          type: 'file',
+                          parentPath: fullPath,
+                          name: ''
+                        });
+                      }}
+                      className="text-gray-400 hover:text-blue-400"
+                    >
+                      <i className="ri-file-add-line text-sm" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCreationContext({
+                          type: 'folder',
+                          parentPath: fullPath,
+                          name: ''
+                        });
+                      }}
+                      className="text-gray-400 hover:text-yellow-500"
+                    >
+                      <i className="ri-folder-add-line text-sm" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {isFolder && openFolders.includes(fullPath) && (
+                <div className="ml-4">
+                  {renderFileTree(item, fullPath)}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const handleCreate = () => {
+    const { type, parentPath, name } = creationContext;
+
+    if (!name.trim()) {
+      setCreationContext({ type: null, parentPath: null, name: '' });
+      return;
+    }
+
+    // Validate file extension
+    if (type === 'file') {
+      const ext = name.split('.').pop().toLowerCase();
+      if (!allowedExtensions.includes(ext)) {
+        alert(`Allowed extensions: ${allowedExtensions.join(', ')}`);
+        return;
+      }
+    }
+
+    setFileTree(prev => {
+      const newTree = structuredClone(prev);
+      let current = newTree;
+      const pathParts = parentPath ? parentPath.split('/') : [];
+
+      // Navigate to parent directory
+      for (const part of pathParts) {
+        if (!current[part]) current[part] = {};
+        current = current[part];
+      }
+
+      // Create new item
+      if (!current[name]) {
+        current[name] = type === 'file' ? { file: { contents: '' } } : {};
+      }
+
+      return newTree;
+    });
+
+    // Auto-open created file
+    if (type === 'file') {
+      const fullPath = parentPath ? `${parentPath}/${name}` : name;
+      setCurrentFile(fullPath);
+      setOpenFiles(prev => [...new Set([...prev, fullPath])]);
+    }
+
+    // Auto-expand parent folders
+    if (parentPath) {
+      setOpenFolders(prev => {
+        const paths = parentPath.split('/');
+        const newFolders = [];
+        let currentPath = '';
+
+        for (const path of paths) {
+          currentPath = currentPath ? `${currentPath}/${path}` : path;
+          if (!prev.includes(currentPath)) {
+            newFolders.push(currentPath);
+          }
+        }
+
+        return [...prev, ...newFolders];
+      });
+    }
+
+    setCreationContext({ type: null, parentPath: null, name: '' });
+  };
+
+  const handleCreateItem = (parentPath, name, type) => {
+    const fullPath = parentPath ? `${parentPath}/${name}` : name;
+
+    if (!name || name.includes('/')) {
+      alert('Invalid name');
+      return;
+    }
+
+    // Validate file extension for files
+    if (type === 'file') {
+      const extension = name.split('.').pop().toLowerCase();
+      if (!allowedExtensions.includes(extension)) {
+        alert(`Invalid extension. Allowed: ${allowedExtensions.join(', ')}`);
+        return;
+      }
+    }
+
+    setFileTree(prev => {
+      const newTree = structuredClone(prev);
+      let current = newTree;
+      const parts = parentPath ? parentPath.split('/') : [];
+
+      // सभी parent directories create करें
+      for (const part of parts) {
+        if (!current[part]) {
+          current[part] = {}; // नई directory बनाएं
+        }
+        current = current[part];
+      }
+
+      // नया item add करें
+      if (!current[name]) {
+        current[name] = type === 'file'
+          ? { file: { contents: '' } }
+          : {};
+
+        // Parent folders को automatically खोलें
+        const newOpenFolders = [...openFolders];
+        let currentPath = '';
+        for (const part of parts) {
+          currentPath += (currentPath ? '/' : '') + part;
+          if (!newOpenFolders.includes(currentPath)) {
+            newOpenFolders.push(currentPath);
+          }
+        }
+        setOpenFolders(newOpenFolders);
+      }
+
+      autoSave(newTree);
+      return newTree;
+    });
+
+    // नई फ़ाइल को automatically खोलें
+    if (type === 'file') {
+      setCurrentFile(fullPath);
+      setOpenFiles(prev => [...new Set([...prev, fullPath])]);
+    }
+  };
+
+  const handleRename = (oldPath, newName) => {
+    if (!newName || newName.includes('/')) {
+      alert('Invalid name');
+      return;
+    }
+    setFileTree(prev => {
+      const newTree = structuredClone(prev);
+      const parts = oldPath.split('/');
+      const oldName = parts.pop();
+      let current = newTree;
+      for (const part of parts) {
+        if (!current[part]) break;
+        current = current[part];
+      }
+      if (current[oldName]) {
+        current[newName] = current[oldName];
+        delete current[oldName];
+      }
+      return newTree;
+    });
+    setOpenFiles(prev => prev.map(file => file === oldPath ? newName : file));
+    setCurrentFile(prev => prev === oldPath ? newName : prev);
+  };
+
+  const deleteFileOrFolder = (path) => {
+    if (window.confirm(`Are you sure you want to delete "${path}"?`)) {
+      setFileTree(prev => {
+        const newTree = structuredClone(prev);
+        const parts = path.split('/');
+        let current = newTree;
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!current[parts[i]]) return prev; // Path invalid
+          current = current[parts[i]];
+        }
+        delete current[parts[parts.length - 1]]; // Delete the file/folder
+        // Auto-save after deletion
+        autoSave(newTree);
+        return newTree;
+      });
+      setOpenFiles(prev => prev.filter(file => file !== path));
+      setOpenFolders(prev => prev.filter(folder => folder !== path));
+      if (currentFile === path) setCurrentFile(null); // Reset current file if deleted
+    }
+  };
+
 
   const getFileContent = (path, tree) => {
     if (!tree || !path) return "";
@@ -538,7 +780,7 @@ const Project = () => {
       // span.appendChild(tooltip); // Removed JS tooltip, only CSS tooltip remains
       return span;
     }
-    
+
     ignoreEvent() {
       return true;
     }
@@ -594,10 +836,21 @@ const Project = () => {
   };
 
   const handleCloseTab = (file) => {
-    setOpenFiles(prev => prev.filter(f => f !== file));
-    if (currentFile === file) {
-      setCurrentFile(openFiles.length > 1 ? openFiles[0] : null);
-    }
+    setOpenFiles(prev => {
+      const idx = prev.indexOf(file);
+      const newOpenFiles = prev.filter(f => f !== file);
+      // If the closed tab was active, select the next tab (right), or previous (left), or null
+      if (currentFile === file) {
+        if (newOpenFiles.length === 0) {
+          setCurrentFile(null);
+        } else if (idx < newOpenFiles.length) {
+          setCurrentFile(newOpenFiles[idx]); // select the next tab
+        } else {
+          setCurrentFile(newOpenFiles[newOpenFiles.length - 1]); // select the last tab
+        }
+      }
+      return newOpenFiles;
+    });
   };
 
   // Add this derived state for filtered users
@@ -781,43 +1034,57 @@ const Project = () => {
       setIsCreatingFolder(false);
       return;
     }
-    // Split path into directories
+
+    // Validate folder name
+    if (trimmedName.includes('//') || trimmedName.endsWith('/')) {
+      alert('Invalid folder name');
+      setIsCreatingFolder(false);
+      return;
+    }
+
     const pathParts = trimmedName.split('/');
     const folderName = pathParts.pop();
     const directories = pathParts;
+
     setFileTree(prev => {
       const newTree = structuredClone(prev);
       let currentLevel = newTree;
-      // Navigate through/create directories
-      directories.forEach(dir => {
+      let currentPath = '';
+
+      // Create parent directories
+      for (const dir of directories) {
+        currentPath += (currentPath ? '/' : '') + dir;
         if (!currentLevel[dir]) {
           currentLevel[dir] = {};
         }
         currentLevel = currentLevel[dir];
-      });
+      }
+
       // Create folder if it doesn't exist
       if (!currentLevel[folderName]) {
         currentLevel[folderName] = {};
-        // Auto-save after creation
         autoSave(newTree);
+
         // Open parent folders
-        setOpenFolders(prev => [
-          ...new Set([...prev, ...directories])
-        ]);
+        setOpenFolders(prev => {
+          const newOpenFolders = [...prev];
+          let path = '';
+          for (const dir of directories) {
+            path += (path ? '/' : '') + dir;
+            if (!newOpenFolders.includes(path)) {
+              newOpenFolders.push(path);
+            }
+          }
+          return newOpenFolders;
+        });
       }
+
       return newTree;
-    }
-    );
-    // Set as current file and add to open files
-    const fullPath = trimmedName;
-    setCurrentFile(fullPath);
-    setOpenFiles(prev => [...new Set([...prev, fullPath])]);
-    setNewFolderName("");
+    });
+
+    setNewFolderName('');
     setIsCreatingFolder(false);
   };
-
-  
-
 
   useEffect(() => {
     initializeSocket(project._id)
@@ -930,7 +1197,7 @@ const Project = () => {
       setSelectedUserIds(new Set()); // Modal band hone pe selectedUserIds empty ho jayega
     }
   }, [isModalOpen]);
-  
+
   useEffect(() => {
     if (!webContainer || !isInstalled) return;
     async function updateFiles() {
@@ -960,6 +1227,34 @@ const Project = () => {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Close creation input on outside click
+  useEffect(() => {
+    if (!creationContext.type) return;
+    function handleClickOutside(event) {
+      if (
+        creationInputRef.current &&
+        !creationInputRef.current.contains(event.target)
+      ) {
+        setCreationContext({ type: null, parentPath: null, name: '' });
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [creationContext.type]);
+
+  // Utility function to get file icon React element based on extension
+  const getFileIcon = (fileName) => {
+    if (!fileName) return fileIcons.default;
+    let ext = fileName.split('.').pop().toLowerCase();
+    // Special cases for files like Dockerfile, Makefile, etc.
+    if (fileName.toLowerCase() === 'dockerfile') ext = 'dockerfile';
+    if (fileName.toLowerCase() === 'makefile') ext = 'makefile';
+    if (fileName.endsWith('.lock')) ext = 'lock';
+    return fileIcons[ext] || fileIcons.default;
+  };
 
   return (
     <main className="h-screen w-screen flex bg-gradient-to-br from-gray-900 to-blue-900/20 text-white ">
@@ -1167,18 +1462,53 @@ const Project = () => {
             <h3 className="text-white font-semibold">EXPLORER</h3>
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  setIsCreatingFile(true);
-                  setNewFileName("");
-                }}
+                onClick={() => setCreationContext({ type: 'file', parentPath: '', name: '' })}
                 className="text-blue-400 hover:text-blue-300 p-2 rounded-lg transition-all"
               >
                 <i className="ri-file-add-line text-xl"></i>
+              </button>
+              <button
+                onClick={() => setCreationContext({ type: 'folder', parentPath: '', name: '' })}
+                className="text-blue-400 hover:text-blue-300 p-2 rounded-lg transition-all"
+              >
+                <i className="ri-folder-add-line text-xl"></i>
               </button>
             </div>
           </div>
 
           <div className="file-tree p-4 space-y-2 overflow-y-auto">
+            {isCreatingFolder && (
+              <div className="ml-4">
+                {/* नई फ़ाइल/फोल्डर इनपुट */}
+                {(creationPath === currentPath && creationType) && (
+                  <div className="flex items-center gap-2 ml-6 p-1">
+                    <i className={`ri-${creationType === 'file' ? 'file-add' : 'folder-add'}-line 
+          ${creationType === 'file' ? 'text-blue-400' : 'text-yellow-500'}`} />
+                    <input
+                      autoFocus
+                      type="text"
+                      className="bg-gray-800 text-white px-2 py-1 rounded flex-1 text-sm"
+                      placeholder={`नया ${creationType === 'file' ? 'फ़ाइल' : 'फोल्डर'} नाम...`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleCreateItem(currentPath, e.target.value.trim(), creationType);
+                          setCreationType(null);
+                          setCreationPath('');
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value.trim()) {
+                          handleCreateItem(currentPath, e.target.value.trim(), creationType);
+                        }
+                        setCreationType(null);
+                        setCreationPath('');
+                      }}
+                    />
+                  </div>
+                )}
+                {renderFileTree(tree[name], currentPath)}
+              </div>
+            )}
             {renderFileTree(fileTree)}
           </div>
         </div>
@@ -1197,18 +1527,17 @@ const Project = () => {
                   return (
                     <div
                       key={file}
-                      className={`flex items-center gap-2 px-3 py-2 border-r border-gray-700 group ${currentFile === file
-                          ? "bg-gray-800 text-white"
-                          : "bg-gray-900 hover:bg-gray-800 text-gray-400"
-                        }`}
+                      className={`tab-item flex items-center gap-2 px-3 py-1 rounded-lg cursor-pointer transition-all ${currentFile === file ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800/60'}`}
+                      onClick={() => setCurrentFile(file)}
                     >
-                      <span className="flex-shrink-0">{icon}</span>
-                      <span className="text-sm truncate max-w-[160px]">{file}</span>
+                      {getFileIcon(file)}
+                      <span className="truncate max-w-[120px]">{file.split('/').pop()}</span>
                       <button
-                        onClick={() => handleCloseTab(file)}
-                        className="ml-2 text-transparent group-hover:text-gray-400 hover:text-white flex-shrink-0"
+                        onClick={e => { e.stopPropagation(); handleCloseTab(file); }}
+                        className="ml-1 text-gray-500 hover:text-red-400"
+                        title="Close"
                       >
-                        <i className="ri-close-line text-sm"></i>
+                        <i className="ri-close-line"></i>
                       </button>
                     </div>
                   );

@@ -88,3 +88,12 @@ think{
 .tab::-webkit-scrollbar{
   display: none;
 }
+
+.tree-item .actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tree-item:hover .actions {
+  opacity: 1;
+}
