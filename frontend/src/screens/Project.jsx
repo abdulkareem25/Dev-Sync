@@ -55,45 +55,52 @@ const THEMES = {
 
 // ICON MAP for file extensions
 const fileIcons = {
-  js: <Icon icon="devicon:javascript" width="1.5em" height="1.5em" color="#f7e018" />,
-  jsx: <Icon icon="devicon:react" width="1.5em" height="1.5em" color="#61dafb" />,
-  ts: <Icon icon="devicon:typescript" width="1.5em" height="1.5em" color="#3178c6" />,
-  py: <Icon icon="devicon:python" width="1.5em" height="1.5em" />,
-  java: <Icon icon="devicon:java" width="1.5em" height="1.5em" />,
-  cpp: <Icon icon="devicon:cplusplus" width="1.5em" height="1.5em" />,
-  html: <Icon icon="devicon:html5" width="1.5em" height="1.5em" color="#e34c26" />,
-  css: <Icon icon="devicon:css3" width="1.5em" height="1.5em" color="#264de4" />,
-  md: <Icon icon="devicon:markdown" width="1.5em" height="1.5em" />,
-  json: <Icon icon="vscode-icons:file-type-json" width="1.5em" height="1.5em" />,
-  xml: <Icon icon="vscode-icons:file-type-xml" width="1.5em" height="1.5em" />,
-  sh: <Icon icon="devicon:bash" width="1.5em" height="1.5em" />,
-  go: <Icon icon="devicon:go" width="1.5em" height="1.5em" />,
-  rs: <Icon icon="devicon:rust" width="1.5em" height="1.5em" />,
-  php: <Icon icon="devicon:php" width="1.5em" height="1.5em" />,
-  cs: <Icon icon="devicon:csharp" width="1.5em" height="1.5em" />,
-  swift: <Icon icon="devicon:swift" width="1.5em" height="1.5em" />,
-  kt: <Icon icon="devicon:kotlin" width="1.5em" height="1.5em" />,
-  dart: <Icon icon="devicon:dart" width="1.5em" height="1.5em" />,
-  scss: <Icon icon="devicon:sass" width="1.5em" height="1.5em" />,
-  less: <Icon icon="vscode-icons:file-type-less" width="1.5em" height="1.5em" />,
-  yaml: <Icon icon="vscode-icons:file-type-yaml" width="1.5em" height="1.5em" />,
-  yml: <Icon icon="vscode-icons:file-type-yaml" width="1.5em" height="1.5em" />,
-  toml: <Icon icon="vscode-icons:file-type-toml" width="1.5em" height="1.5em" />,
-  txt: <Icon icon="vscode-icons:file-type-text" width="1.5em" height="1.5em" />,
-  lock: <Icon icon="vscode-icons:file-type-lock" width="1.5em" height="1.5em" />,
-  dockerfile: <Icon icon="devicon:docker" width="1.5em" height="1.5em" />,
-  makefile: <Icon icon="vscode-icons:file-type-makefile" width="1.5em" height="1.5em" />,
-  rb: <Icon icon="devicon:ruby" width="1.5em" height="1.5em" />,
-  pl: <Icon icon="devicon:perl" width="1.5em" height="1.5em" />,
-  sql: <Icon icon="devicon:mysql" width="1.5em" height="1.5em" />,
-  default: <Icon icon="vscode-icons:file-type-generic" width="1.5em" height="1.5em" />
+  js: <Icon icon="devicon:javascript" width="1em" height="1em" color="#f7e018" />,
+  jsx: <Icon icon="devicon:react" width="1em" height="1em" color="#61dafb" />,
+  ts: <Icon icon="devicon:typescript" width="1em" height="1em" color="#3178c6" />,
+  py: <Icon icon="devicon:python" width="1em" height="1em" />,
+  java: <Icon icon="devicon:java" width="1em" height="1em" />,
+  cpp: <Icon icon="devicon:cplusplus" width="1em" height="1em" />,
+  html: <Icon icon="devicon:html5" width="1em" height="1em" color="#e34c26" />,
+  css: <Icon icon="devicon:css3" width="1em" height="1em" color="#264de4" />,
+  md: <Icon icon="devicon:markdown" width="1em" height="1em" />,
+  json: <Icon icon="vscode-icons:file-type-json" width="1em" height="1em" />,
+  xml: <Icon icon="vscode-icons:file-type-xml" width="1em" height="1em" />,
+  sh: <Icon icon="devicon:bash" width="1em" height="1em" />,
+  go: <Icon icon="devicon:go" width="1em" height="1em" />,
+  rs: <Icon icon="devicon:rust" width="1em" height="1em" />,
+  php: <Icon icon="devicon:php" width="1em" height="1em" />,
+  cs: <Icon icon="devicon:csharp" width="1em" height="1em" />,
+  swift: <Icon icon="devicon:swift" width="1em" height="1em" />,
+  kt: <Icon icon="devicon:kotlin" width="1em" height="1em" />,
+  dart: <Icon icon="devicon:dart" width="1em" height="1em" />,
+  scss: <Icon icon="devicon:sass" width="1em" height="1em" />,
+  less: <Icon icon="vscode-icons:file-type-less" width="1em" height="1em" />,
+  yaml: <Icon icon="vscode-icons:file-type-yaml" width="1em" height="1em" />,
+  yml: <Icon icon="vscode-icons:file-type-yaml" width="1em" height="1em" />,
+  toml: <Icon icon="vscode-icons:file-type-toml" width="1em" height="1em" />,
+  txt: <Icon icon="vscode-icons:file-type-text" width="1em" height="1em" />,
+  lock: <Icon icon="vscode-icons:file-type-lock" width="1em" height="1em" />,
+  dockerfile: <Icon icon="devicon:docker" width="1em" height="1em" />,
+  makefile: <Icon icon="vscode-icons:file-type-makefile" width="1em" height="1em" />,
+  rb: <Icon icon="devicon:ruby" width="1em" height="1em" />,
+  pl: <Icon icon="devicon:perl" width="1em" height="1em" />,
+  sql: <Icon icon="devicon:mysql" width="1em" height="1em" />,
+  default: <Icon icon="vscode-icons:file-type-generic" width="1em" height="1em" />,
+  png: <Icon icon="vscode-icons:file-type-png" width="1em" height="1em" />,
+  jpg: <Icon icon="vscode-icons:file-type-jpg" width="1em" height="1em" />,
+  jpeg: <Icon icon="vscode-icons:file-type-jpg" width="1em" height="1em" />,
+  gif: <Icon icon="vscode-icons:file-type-gif" width="1em" height="1em" />,
+  bmp: <Icon icon="vscode-icons:file-type-bmp" width="1em" height="1em" />,
+  webp: <Icon icon="vscode-icons:file-type-webp" width="1em" height="1em" />
 };
 
 // Allowed file extensions
 const allowedExtensions = [
   'js', 'jsx', 'ts', 'py', 'java', 'cpp', 'html', 'css', 'md',
   'json', 'xml', 'sh', 'go', 'rs', 'php', 'cs', 'swift', 'kt', 'dart',
-  'scss', 'less', 'yaml', 'yml', 'toml', 'txt', 'lock', 'dockerfile', 'makefile', 'rb', 'pl', 'sql'
+  'scss', 'less', 'yaml', 'yml', 'toml', 'txt', 'lock', 'dockerfile', 'makefile', 'rb', 'pl', 'sql',
+  'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'
 ];
 
 const WriteAiMessage = React.memo(({ message }) => {
@@ -146,10 +153,10 @@ const WriteAiMessage = React.memo(({ message }) => {
               }
             },
             // Inline code snippets
-            inlineCode: { component: ({ children }) => <code className="bg-gray-700 px-1.5 py-0.5 rounded text-red-300 text-sm">{children}</code> },
+            inlineCode: { component: ({ children }) => <code className="bg-gray-700 px-1 py-0.5 rounded text-red-300 text-sm">{children}</code> },
             // Lists with improved spacing
-            ul: { component: ({ children }) => <ul className="list-disc list-inside space-y-1.5 mb-4 pl-4">{children}</ul> },
-            ol: { component: ({ children }) => <ol className="list-decimal list-inside space-y-1.5 mb-4 pl-4">{children}</ol> },
+            ul: { component: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-4 pl-4">{children}</ul> },
+            ol: { component: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-4 pl-4">{children}</ol> },
             li: { component: ({ children }) => <li className="text-gray-300 pl-2">{children}</li> },
             // Blockquotes with updated styling
             blockquote: {
@@ -216,29 +223,6 @@ const Project = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  // const deleteFile = (filePath) => {
-  //   if (window.confirm(`Are you sure you want to delete "${filePath}"?`)) {
-  //     setFileTree((prevFileTree) => {
-  //       const newTree = structuredClone(prevFileTree);
-  //       const parts = filePath.split("/");
-  //       let current = newTree;
-
-  //       for (let i = 0; i < parts.length - 1; i++) {
-  //         if (!current[parts[i]]) return prevFileTree; // File path invalid
-  //         current = current[parts[i]];
-  //       }
-
-  //       delete current[parts[parts.length - 1]]; // Delete the file
-  //       // Auto-save after file deletion
-  //       autoSave(newTree);
-  //       return newTree;
-  //     });
-
-  //     setOpenFiles((prevOpenFiles) => prevOpenFiles.filter((file) => file !== filePath));
-  //     if (currentFile === filePath) setCurrentFile(null); // Reset current file if deleted
-  //   }
-  // };
-
   const [contextMenu, setContextMenu] = useState(null);
   const [creationType, setCreationType] = useState(null); // 'file' or 'folder'
   const [creationPath, setCreationPath] = useState('');
@@ -247,9 +231,81 @@ const Project = () => {
     parentPath: null,
     name: ''
   });
-  
+
   const creationInputRef = useRef(null);
-  
+
+
+  const handleUserClick = (id) => {
+    setSelectedUserIds(prevSelectedUserIds => {
+      const newSelectedUserIds = new Set(prevSelectedUserIds)
+      if (newSelectedUserIds.has(id)) {
+        newSelectedUserIds.delete(id)
+      } else {
+        newSelectedUserIds.add(id)
+      }
+      return newSelectedUserIds
+    })
+  }
+
+  function addCollaborators() {
+    if (!user || user._id !== location.state.project.admin?._id) {
+      alert("Only the admin can add collaborators.");
+      return;
+    }
+
+    if (selectedUserIds.size === 0) {
+      alert("Select users");
+      return;
+    }
+
+    axios.put("/projects/add-user", {
+      projectId: location.state.project._id,
+      users: Array.from(selectedUserIds)
+    })
+      .then(res => {
+        console.log(res.data);
+        setIsModalOpen(false);
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
+
+  function getColorForSender(sender) {
+    let hash = 0
+    for (let i = 0; i < sender.length; i++) {
+      hash = sender.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    const hue = Math.abs(hash) % 360
+    return `hsl(${hue}, 100%, 80%)`
+  }
+
+  const send = (message) => {
+    const trimmedMessage = message.trim();
+    if (trimmedMessage === "") return;
+
+    const outgoingMessage = {
+      sender: { _id: user._id, name: user.name },
+      message: trimmedMessage,
+    };
+
+    sendMessage("project-message", outgoingMessage);
+    setMessages((prevMessages) => [...prevMessages, outgoingMessage]);
+    saveMessageToDB(outgoingMessage);
+  };
+
+  const saveMessageToDB = async (messageData) => {
+    try {
+      await axios.post('/projects/save-message', {
+        projectId: project._id,
+        sender: messageData.sender,
+        message: messageData.message
+      });
+    } catch (err) {
+      console.error('Error saving message:', err);
+    }
+  };
+
   // Context Menu Component
   const ContextMenu = ({ position, targetPath, isFolder }) => {
     const [renameInput, setRenameInput] = useState(targetPath ? targetPath.split('/').pop() : "");
@@ -352,113 +408,6 @@ const Project = () => {
     );
   };
 
-  // Modified renderFileTree function
-  const renderFileTree = (tree = {}, currentPath = "") => {
-    return (
-      <div className="file-tree">
-        {creationContext.type && creationContext.parentPath === currentPath && (
-          <div className="creation-input pl-4 py-1" ref={creationInputRef}>
-            <input
-              autoFocus
-              type="text"
-              value={creationContext.name}
-              onChange={(e) => setCreationContext(prev => ({
-                ...prev,
-                name: e.target.value
-              }))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreate();
-                if (e.key === 'Escape') setCreationContext({ type: null, parentPath: null, name: '' });
-              }}
-              className="bg-gray-800 text-white px-2 py-1 rounded text-sm w-36"
-              placeholder={`New ${creationContext.type} name...`}
-            />
-          </div>
-        )}
-
-        {Object.entries(tree).map(([name, item]) => {
-          const fullPath = currentPath ? `${currentPath}/${name}` : name;
-          const isFolder = typeof item === 'object' && item !== null && !item.file;
-
-          return (
-            <div key={fullPath} className="tree-item">
-              <div
-                className="group flex items-center gap-2 hover:bg-gray-700 p-1 rounded relative"
-                onContextMenu={e => {
-                  e.preventDefault();
-                  setContextMenu({ position: { x: e.clientX, y: e.clientY }, targetPath: fullPath, isFolder });
-                }}
-              >
-                <button
-                  className="flex items-center gap-2 flex-1"
-                  onClick={() => {
-                    if (isFolder) {
-                      setOpenFolders(prev =>
-                        prev.includes(fullPath)
-                          ? prev.filter(p => p !== fullPath)
-                          : [...prev, fullPath]
-                      );
-                    } else {
-                      setCurrentFile(fullPath);
-                      setOpenFiles(prev => prev.includes(fullPath) ? prev : [...prev, fullPath]);
-                    }
-                  }}
-                >
-                  {isFolder ? (
-                    <i
-                      className={`ri-folder-${openFolders.includes(fullPath) ? 'open' : 'close'
-                        }-fill text-yellow-500`}
-                    />
-                  ) : (
-                    getFileIcon(name)
-                  )}
-                  <span className="truncate">{name}</span>
-                </button>
-
-                {isFolder && (
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setCreationContext({
-                          type: 'file',
-                          parentPath: fullPath,
-                          name: ''
-                        });
-                      }}
-                      className="text-gray-400 hover:text-blue-400"
-                    >
-                      <i className="ri-file-add-line text-sm" />
-                    </button>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setCreationContext({
-                          type: 'folder',
-                          parentPath: fullPath,
-                          name: ''
-                        });
-                      }}
-                      className="text-gray-400 hover:text-yellow-500"
-                    >
-                      <i className="ri-folder-add-line text-sm" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {isFolder && openFolders.includes(fullPath) && (
-                <div className="ml-4">
-                  {renderFileTree(item, fullPath)}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   const handleCreate = () => {
     const { type, parentPath, name } = creationContext;
 
@@ -490,6 +439,8 @@ const Project = () => {
       // Create new item
       if (!current[name]) {
         current[name] = type === 'file' ? { file: { contents: '' } } : {};
+        // Call autoSave after creating file/folder
+        autoSave(newTree);
       }
 
       return newTree;
@@ -569,9 +520,10 @@ const Project = () => {
           }
         }
         setOpenFolders(newOpenFolders);
+        // Call autoSave after creating file/folder
+        autoSave(newTree);
       }
 
-      autoSave(newTree);
       return newTree;
     });
 
@@ -635,7 +587,6 @@ const Project = () => {
     }
   };
 
-
   const getFileContent = (path, tree) => {
     if (!tree || !path) return "";
     const parts = path.split("/");
@@ -649,16 +600,120 @@ const Project = () => {
     return current?.file?.contents ?? ""; // Ensure empty files are also handled
   };
 
-  const saveMessageToDB = async (messageData) => {
-    try {
-      await axios.post('/projects/save-message', {
-        projectId: project._id,
-        sender: messageData.sender,
-        message: messageData.message
-      });
-    } catch (err) {
-      console.error('Error saving message:', err);
-    }
+  const renderFileTree = (tree = {}, currentPath = "") => {
+    return (
+      <div className="file-tree">
+        {creationContext.type && creationContext.parentPath === currentPath && (
+          <div className="creation-input pl-4 py-1" ref={creationInputRef}>
+            <input
+              autoFocus
+              type="text"
+              value={creationContext.name}
+              onChange={(e) => setCreationContext(prev => ({
+                ...prev,
+                name: e.target.value
+              }))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreate();
+                if (e.key === 'Escape') setCreationContext({ type: null, parentPath: null, name: '' });
+              }}
+              className="bg-gray-800 text-white px-2 py-1 rounded text-sm w-36"
+              placeholder={`New ${creationContext.type} name...`}
+            />
+          </div>
+        )}
+
+        {Object.entries(tree).map(([name, item]) => {
+          const fullPath = currentPath ? `${currentPath}/${name}` : name;
+          const isFolder = typeof item === 'object' && item !== null && !item.file;
+
+          return (
+            <div key={fullPath} className="tree-item">
+              <div
+                className="group flex items-center gap-2 hover:bg-gray-700 p-1 rounded relative"
+                onContextMenu={e => {
+                  e.preventDefault();
+                  setContextMenu({ position: { x: e.clientX, y: e.clientY }, targetPath: fullPath, isFolder });
+                }}
+              >
+                <button
+                  className="flex items-center gap-2 flex-1"
+                  onClick={() => {
+                    if (isFolder) {
+                      setOpenFolders(prev =>
+                        prev.includes(fullPath)
+                          ? prev.filter(p => p !== fullPath)
+                          : [...prev, fullPath]
+                      );
+                    } else {
+                      setCurrentFile(fullPath);
+                      setOpenFiles(prev => prev.includes(fullPath) ? prev : [...prev, fullPath]);
+                    }
+                  }}
+                >
+                  {isFolder ? (
+                    <i
+                      className={`ri-folder-${openFolders.includes(fullPath) ? 'open' : 'close'
+                        }-fill text-yellow-500`}
+                    />
+                  ) : (
+                    getFileIcon(name)
+                  )}
+                  <span className="truncate pb-0.5">{name}</span>
+                </button>
+
+                {isFolder && (
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        setCreationContext({
+                          type: 'file',
+                          parentPath: fullPath,
+                          name: ''
+                        });
+                      }}
+                      className="text-gray-400 hover:text-blue-400"
+                    >
+                      <i className="ri-file-add-line text-sm" />
+                    </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        setCreationContext({
+                          type: 'folder',
+                          parentPath: fullPath,
+                          name: ''
+                        });
+                      }}
+                      className="text-gray-400 hover:text-yellow-500"
+                    >
+                      <i className="ri-folder-add-line text-sm" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {isFolder && openFolders.includes(fullPath) && (
+                <div className="ml-4">
+                  {renderFileTree(item, fullPath)}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const getFileIcon = (fileName) => {
+    if (!fileName) return fileIcons.default;
+    let ext = fileName.split('.').pop().toLowerCase();
+    // Special cases for files like Dockerfile, Makefile, etc.
+    if (fileName.toLowerCase() === 'dockerfile') ext = 'dockerfile';
+    if (fileName.toLowerCase() === 'makefile') ext = 'makefile';
+    if (fileName.endsWith('.lock')) ext = 'lock';
+    return fileIcons[ext] || fileIcons.default;
   };
 
   const autoSave = debounce((updatedFileTree) => {
@@ -672,65 +727,6 @@ const Project = () => {
     });
   }, 1000);
 
-  const handleUserClick = (id) => {
-    setSelectedUserIds(prevSelectedUserIds => {
-      const newSelectedUserIds = new Set(prevSelectedUserIds)
-      if (newSelectedUserIds.has(id)) {
-        newSelectedUserIds.delete(id)
-      } else {
-        newSelectedUserIds.add(id)
-      }
-      return newSelectedUserIds
-    })
-  }
-
-  function addCollaborators() {
-    if (!user || user._id !== location.state.project.admin?._id) {
-      alert("Only the admin can add collaborators.");
-      return;
-    }
-
-    if (selectedUserIds.size === 0) {
-      alert("Select users");
-      return;
-    }
-
-    axios.put("/projects/add-user", {
-      projectId: location.state.project._id,
-      users: Array.from(selectedUserIds)
-    })
-      .then(res => {
-        console.log(res.data);
-        setIsModalOpen(false);
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  }
-
-  function getColorForSender(sender) {
-    let hash = 0
-    for (let i = 0; i < sender.length; i++) {
-      hash = sender.charCodeAt(i) + ((hash << 5) - hash)
-    }
-    const hue = Math.abs(hash) % 360
-    return `hsl(${hue}, 100%, 80%)`
-  }
-
-  const send = (message) => {
-    const trimmedMessage = message.trim();
-    if (trimmedMessage === "") return;
-
-    const outgoingMessage = {
-      sender: { _id: user._id, name: user.name },
-      message: trimmedMessage,
-    };
-
-    sendMessage("project-message", outgoingMessage);
-    setMessages((prevMessages) => [...prevMessages, outgoingMessage]);
-    saveMessageToDB(outgoingMessage);
-  };
-
   const throttledCursorUpdate = throttle((cursorPos) => {
     setLocalCursor(cursorPos);
     sendMessage("CURSOR_UPDATE", {
@@ -741,7 +737,6 @@ const Project = () => {
     });
   }, 100);
 
-  // Custom cursor decoration extension
   const collaborativeDecorations = (cursors) => {
     return EditorView.decorations.of(state => {
       const decorations = [];
@@ -969,123 +964,6 @@ const Project = () => {
     EditorView.contentAttributes.of({ "data-enable-grammarly": "false" }),
   ];
 
-  // File creation handler
-  const handleFileCreate = () => {
-    const trimmedName = newFileName.trim();
-
-    if (!trimmedName) {
-      setIsCreatingFile(false);
-      return;
-    }
-
-    // Validate file extension
-    const extension = trimmedName.split('.').pop().toLowerCase();
-    if (!allowedExtensions.includes(extension)) {
-      alert(`Invalid file extension. Allowed: ${allowedExtensions.join(', ')}`);
-      setNewFileName("");
-      setIsCreatingFile(false);
-      return;
-    }
-
-    // Split path into directories and filename
-    const pathParts = trimmedName.split('/');
-    const fileName = pathParts.pop();
-    const directories = pathParts;
-
-    setFileTree(prev => {
-      const newTree = structuredClone(prev);
-      let currentLevel = newTree;
-
-      // Navigate through/create directories
-      directories.forEach(dir => {
-        if (!currentLevel[dir]) {
-          currentLevel[dir] = {};
-        }
-        currentLevel = currentLevel[dir];
-      });
-
-      // Create file if it doesn't exist
-      if (!currentLevel[fileName]) {
-        currentLevel[fileName] = { file: { contents: "" } };
-
-        // Auto-save after creation
-        autoSave(newTree);
-
-        // Open parent folders
-        setOpenFolders(prev => [
-          ...new Set([...prev, ...directories])
-        ]);
-      }
-
-      return newTree;
-    });
-
-    // Set as current file and add to open files
-    const fullPath = trimmedName;
-    setCurrentFile(fullPath);
-    setOpenFiles(prev => [...new Set([...prev, fullPath])]);
-    setNewFileName("");
-    setIsCreatingFile(false);
-  };
-
-  const handleFolderCreate = () => {
-    const trimmedName = newFolderName.trim();
-    if (!trimmedName) {
-      setIsCreatingFolder(false);
-      return;
-    }
-
-    // Validate folder name
-    if (trimmedName.includes('//') || trimmedName.endsWith('/')) {
-      alert('Invalid folder name');
-      setIsCreatingFolder(false);
-      return;
-    }
-
-    const pathParts = trimmedName.split('/');
-    const folderName = pathParts.pop();
-    const directories = pathParts;
-
-    setFileTree(prev => {
-      const newTree = structuredClone(prev);
-      let currentLevel = newTree;
-      let currentPath = '';
-
-      // Create parent directories
-      for (const dir of directories) {
-        currentPath += (currentPath ? '/' : '') + dir;
-        if (!currentLevel[dir]) {
-          currentLevel[dir] = {};
-        }
-        currentLevel = currentLevel[dir];
-      }
-
-      // Create folder if it doesn't exist
-      if (!currentLevel[folderName]) {
-        currentLevel[folderName] = {};
-        autoSave(newTree);
-
-        // Open parent folders
-        setOpenFolders(prev => {
-          const newOpenFolders = [...prev];
-          let path = '';
-          for (const dir of directories) {
-            path += (path ? '/' : '') + dir;
-            if (!newOpenFolders.includes(path)) {
-              newOpenFolders.push(path);
-            }
-          }
-          return newOpenFolders;
-        });
-      }
-
-      return newTree;
-    });
-
-    setNewFolderName('');
-    setIsCreatingFolder(false);
-  };
-
   // Utility: Sanitize file tree for WebContainer
   function sanitizeFileTree(tree) {
     // Always return an object, never undefined/null
@@ -1273,17 +1151,6 @@ const Project = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [creationContext.type]);
-
-  // Utility function to get file icon React element based on extension
-  const getFileIcon = (fileName) => {
-    if (!fileName) return fileIcons.default;
-    let ext = fileName.split('.').pop().toLowerCase();
-    // Special cases for files like Dockerfile, Makefile, etc.
-    if (fileName.toLowerCase() === 'dockerfile') ext = 'dockerfile';
-    if (fileName.toLowerCase() === 'makefile') ext = 'makefile';
-    if (fileName.endsWith('.lock')) ext = 'lock';
-    return fileIcons[ext] || fileIcons.default;
-  };
 
   return (
     <main className="h-screen w-screen flex bg-gradient-to-br from-gray-900 to-blue-900/20 text-white ">
@@ -1560,7 +1427,7 @@ const Project = () => {
                       onClick={() => setCurrentFile(file)}
                     >
                       {getFileIcon(file)}
-                      <span className="truncate max-w-[120px]">{file.split('/').pop()}</span>
+                      <span className="truncate max-w-[120px] pb-0.5">{file.split('/').pop()}</span>
                       <button
                         onClick={e => { e.stopPropagation(); handleCloseTab(file); }}
                         className="ml-1 text-gray-500 hover:text-red-400"
