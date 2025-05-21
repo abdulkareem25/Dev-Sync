@@ -16,12 +16,15 @@ const Home = () => {
     if (!projectName.trim()) return;
 
     axios.post('/projects/create', {
-      name: projectName,
-      admin: {
-        _id: user._id,
-        name: user.name,
-        email: user.email
-      }
+      headers: {
+        'Authorization': `Bearer ${user.token}`
+      },
+      name: projectName.trim(),
+      // admin: {
+      //   _id: user._id,
+      //   name: user.name,
+      //   email: user.email
+      // }
     }).then((res) => {
       setIsModalOpen(false);
       setProjectName("");
@@ -54,7 +57,7 @@ const Home = () => {
           <div className='flex gap-4'>
             {user ? (
               <>
-                <button 
+                <button
                   onClick={() => setIsModalOpen(true)}
                   className='bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-all flex items-center gap-2'
                 >
@@ -102,14 +105,13 @@ const Home = () => {
         <h2 className='text-3xl font-bold text-white mb-8'>Your Projects</h2>
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
           {projects.map((project) => (
-            <div 
+            <div
               key={project._id}
               onClick={() => navigate(`/project`, { state: { project } })}
-              className={`p-6 rounded-xl bg-gray-800 hover:bg-gray-700 cursor-pointer transition-all border-2 ${
-                user && project.admin?._id === user._id 
-                  ? 'border-blue-500' 
+              className={`p-6 rounded-xl bg-gray-800 hover:bg-gray-700 cursor-pointer transition-all border-2 ${user && project.admin?._id === user._id
+                  ? 'border-blue-500'
                   : 'border-gray-600'
-              }`}
+                }`}
             >
               <h3 className='text-xl font-semibold text-white mb-2'>{project.name}</h3>
               <div className='flex items-center gap-2 text-gray-400'>

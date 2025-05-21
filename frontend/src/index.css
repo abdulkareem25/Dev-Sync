@@ -76,16 +76,16 @@ html::-webkit-scrollbar {
   z-index: 10;
 }
 
-pre div::-webkit-scrollbar{
+pre div::-webkit-scrollbar {
   display: none;
 }
 
 
-think{
+think {
   display: none;
 }
 
-.tab::-webkit-scrollbar{
+.tab::-webkit-scrollbar {
   display: none;
 }
 
@@ -96,4 +96,46 @@ think{
 
 .tree-item:hover .actions {
   opacity: 1;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.install-status {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #2d2d2d;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.install-status.error {
+  background: #ff4444;
 }

@@ -14,7 +14,8 @@ export const createProject = async ({ name, admin }) => {
         project = await projectModel.create({
             name,
             admin, // Store admin details in the project
-            users: [admin._id] // Admin should be part of users
+            users: [admin._id], // Admin should be part of users
+            fileTree: {}, // Initialize file tree
         });
     } catch (error) {
         if (error.code == 11000) {

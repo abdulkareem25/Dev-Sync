@@ -53,54 +53,76 @@ const THEMES = {
   githubDark
 };
 
-// ICON MAP for file extensions
 const fileIcons = {
+  // Programming Languages
   js: <Icon icon="devicon:javascript" width="1em" height="1em" color="#f7e018" />,
   jsx: <Icon icon="devicon:react" width="1em" height="1em" color="#61dafb" />,
   ts: <Icon icon="devicon:typescript" width="1em" height="1em" color="#3178c6" />,
-  py: <Icon icon="devicon:python" width="1em" height="1em" />,
-  java: <Icon icon="devicon:java" width="1em" height="1em" />,
-  cpp: <Icon icon="devicon:cplusplus" width="1em" height="1em" />,
+  tsx: <Icon icon="devicon:typescript" width="1em" height="1em" color="#3178c6" />,
   html: <Icon icon="devicon:html5" width="1em" height="1em" color="#e34c26" />,
   css: <Icon icon="devicon:css3" width="1em" height="1em" color="#264de4" />,
-  md: <Icon icon="devicon:markdown" width="1em" height="1em" />,
-  json: <Icon icon="vscode-icons:file-type-json" width="1em" height="1em" />,
-  xml: <Icon icon="vscode-icons:file-type-xml" width="1em" height="1em" />,
-  sh: <Icon icon="devicon:bash" width="1em" height="1em" />,
-  go: <Icon icon="devicon:go" width="1em" height="1em" />,
-  rs: <Icon icon="devicon:rust" width="1em" height="1em" />,
-  php: <Icon icon="devicon:php" width="1em" height="1em" />,
-  cs: <Icon icon="devicon:csharp" width="1em" height="1em" />,
-  swift: <Icon icon="devicon:swift" width="1em" height="1em" />,
-  kt: <Icon icon="devicon:kotlin" width="1em" height="1em" />,
-  dart: <Icon icon="devicon:dart" width="1em" height="1em" />,
   scss: <Icon icon="devicon:sass" width="1em" height="1em" />,
   less: <Icon icon="vscode-icons:file-type-less" width="1em" height="1em" />,
-  yaml: <Icon icon="vscode-icons:file-type-yaml" width="1em" height="1em" />,
-  yml: <Icon icon="vscode-icons:file-type-yaml" width="1em" height="1em" />,
-  toml: <Icon icon="vscode-icons:file-type-toml" width="1em" height="1em" />,
-  txt: <Icon icon="vscode-icons:file-type-text" width="1em" height="1em" />,
+  json: <Icon icon="vscode-icons:file-type-json" width="1em" height="1em" />,
+
+  // Configuration Files
+  env: <Icon icon="vscode-icons:file-type-env" width="1em" height="1em" />,
   lock: <Icon icon="vscode-icons:file-type-lock" width="1em" height="1em" />,
-  dockerfile: <Icon icon="devicon:docker" width="1em" height="1em" />,
-  makefile: <Icon icon="vscode-icons:file-type-makefile" width="1em" height="1em" />,
-  rb: <Icon icon="devicon:ruby" width="1em" height="1em" />,
-  pl: <Icon icon="devicon:perl" width="1em" height="1em" />,
-  sql: <Icon icon="devicon:mysql" width="1em" height="1em" />,
-  default: <Icon icon="vscode-icons:file-type-generic" width="1em" height="1em" />,
+  yml: <Icon icon="vscode-icons:file-type-yaml" width="1em" height="1em" />,
+  yaml: <Icon icon="vscode-icons:file-type-yaml" width="1em" height="1em" />,
+  toml: <Icon icon="vscode-icons:file-type-toml" width="1em" height="1em" />,
+
+  // Documents
+  md: <Icon icon="devicon:markdown" width="1em" height="1em" />,
+  txt: <Icon icon="vscode-icons:file-type-text" width="1em" height="1em" />,
+
+  // Assets
   png: <Icon icon="vscode-icons:file-type-png" width="1em" height="1em" />,
   jpg: <Icon icon="vscode-icons:file-type-jpg" width="1em" height="1em" />,
   jpeg: <Icon icon="vscode-icons:file-type-jpg" width="1em" height="1em" />,
   gif: <Icon icon="vscode-icons:file-type-gif" width="1em" height="1em" />,
-  bmp: <Icon icon="vscode-icons:file-type-bmp" width="1em" height="1em" />,
-  webp: <Icon icon="vscode-icons:file-type-webp" width="1em" height="1em" />
+  svg: <Icon icon="devicon:svg" width="1em" height="1em" />,
+  webp: <Icon icon="vscode-icons:file-type-webp" width="1em" height="1em" />,
+  ico: <Icon icon="vscode-icons:file-type-image" width="1em" height="1em" />,
+
+  // Media Files
+  mp3: <Icon icon="vscode-icons:file-type-audio" width="1em" height="1em" />,
+  wav: <Icon icon="vscode-icons:file-type-audio" width="1em" height="1em" />,
+  mp4: <Icon icon="vscode-icons:file-type-video" width="1em" height="1em" />,
+  webm: <Icon icon="vscode-icons:file-type-video" width="1em" height="1em" />,
+
+  // Fonts
+  woff: <Icon icon="vscode-icons:file-type-font" width="1em" height="1em" />,
+  woff2: <Icon icon="vscode-icons:file-type-font" width="1em" height="1em" />,
+  ttf: <Icon icon="vscode-icons:file-type-font" width="1em" height="1em" />,
+
+  // System Files
+  dockerfile: <Icon icon="devicon:docker" width="1em" height="1em" />,
+  sh: <Icon icon="devicon:bash" width="1em" height="1em" />,
+  default: <Icon icon="vscode-icons:file-type-generic" width="1em" height="1em" />
 };
 
-// Allowed file extensions
 const allowedExtensions = [
-  'js', 'jsx', 'ts', 'py', 'java', 'cpp', 'html', 'css', 'md',
-  'json', 'xml', 'sh', 'go', 'rs', 'php', 'cs', 'swift', 'kt', 'dart',
-  'scss', 'less', 'yaml', 'yml', 'toml', 'txt', 'lock', 'dockerfile', 'makefile', 'rb', 'pl', 'sql',
-  'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'
+  // Code Files
+  'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'scss', 'less', 'json',
+
+  // Configuration
+  'env', 'lock', 'yml', 'yaml', 'toml',
+
+  // Documents
+  'md', 'txt',
+
+  // Assets
+  'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico',
+
+  // Media
+  'mp3', 'wav', 'mp4', 'webm',
+
+  // Fonts
+  'woff', 'woff2', 'ttf',
+
+  // System
+  'dockerfile', 'sh'
 ];
 
 const WriteAiMessage = React.memo(({ message }) => {
@@ -477,6 +499,12 @@ const Project = () => {
   const handleCreateItem = (parentPath, name, type) => {
     const fullPath = parentPath ? `${parentPath}/${name}` : name;
 
+    // Add duplicate check at beginning
+    if (existsInFileTree(fullPath, fileTree)) {
+      alert('Item already exists!');
+      return;
+    }
+
     if (!name || name.includes('/')) {
       alert('Invalid name');
       return;
@@ -496,14 +524,15 @@ const Project = () => {
       let current = newTree;
       const parts = parentPath ? parentPath.split('/') : [];
 
-      // सभी parent directories create करें
+      // Add path validation
       for (const part of parts) {
-        if (!current[part]) {
-          current[part] = {}; // नई directory बनाएं
+        if (current[part]?.file) { // Check if path segment is a file
+          alert('Invalid path - cannot create in file');
+          return prev; // Return original tree
         }
+        current[part] = current[part] || {};
         current = current[part];
       }
-
       // नया item add करें
       if (!current[name]) {
         current[name] = type === 'file'
@@ -532,6 +561,16 @@ const Project = () => {
       setCurrentFile(fullPath);
       setOpenFiles(prev => [...new Set([...prev, fullPath])]);
     }
+  };
+
+  const existsInFileTree = (path, tree) => {
+    const parts = path.split('/');
+    let current = tree;
+    for (const part of parts) {
+      if (!current[part]) return false;
+      current = current[part];
+    }
+    return true;
   };
 
   const handleRename = (oldPath, newPath) => {
@@ -597,7 +636,15 @@ const Project = () => {
       current = current[parts[i]];
     }
 
-    return current?.file?.contents ?? ""; // Ensure empty files are also handled
+    const fileData = current?.file;
+    if (fileData?.isImage) {
+      // Handle old format with prefix if exists
+      return fileData.contents.startsWith('data:image')
+        ? fileData.contents.split(',')[1]
+        : fileData.contents;
+    }
+
+    return current?.file?.contents || "";
   };
 
   const renderFileTree = (tree = {}, currentPath = "") => {
@@ -707,6 +754,9 @@ const Project = () => {
   };
 
   const getFileIcon = (fileName) => {
+    if (isImageFile(fileName)) {
+      return <Icon icon="vscode-icons:file-type-image" width="1em" height="1em" />;
+    }
     if (!fileName) return fileIcons.default;
     let ext = fileName.split('.').pop().toLowerCase();
     // Special cases for files like Dockerfile, Makefile, etc.
@@ -725,7 +775,105 @@ const Project = () => {
     }).catch(err => {
       console.log("Error in auto-save:", err);
     });
-  }, 1000);
+  }, 3000);
+
+  const handleFileUpload = async (e) => {
+    const files = e.target.files;
+    await processFileUpload(files);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleFolderUpload = async (e) => {
+    const files = e.target.files;
+    await processFileUpload(files, true);
+    e.target.value = ''; // Reset input
+  };
+
+  const isImageFile = (fileName) => {
+    return /\.(png|jpg|jpeg|gif|webp)$/i.test(fileName);
+  };
+
+  const getMimeType = (fileName) => {
+    const ext = fileName.split('.').pop().toLowerCase();
+    return {
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      gif: 'image/gif',
+      webp: 'image/webp'
+    }[ext] || 'application/octet-stream';
+  };
+
+  const processFileUpload = async (files, isFolderUpload = false) => {
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const newTree = structuredClone(fileTree);
+
+    for (const file of files) {
+
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File ${file.name} exceeds 5MB limit`);
+        continue;
+      }
+
+      const webkitPath = file.webkitRelativePath || '';
+      const pathParts = isFolderUpload
+        ? webkitPath.split('/')
+        : [file.name];
+
+      let current = newTree;
+
+      // Handle folder structure
+      for (let i = 0; i < pathParts.length - 1; i++) {
+        const part = pathParts[i];
+        if (!current[part]) {
+          current[part] = {};
+        }
+        current = current[part];
+      }
+
+      const fileName = pathParts[pathParts.length - 1];
+      const isImage = /\.(png|jpg|jpeg|gif|webp)$/i.test(fileName);
+      const extension = fileName.split('.').pop().toLowerCase();
+
+      // Validate file extension
+      if (!allowedExtensions.includes(extension) && !isFolderUpload) {
+        alert(`Invalid file type: ${extension}`);
+        continue;
+      }
+
+      // Read file content
+      const contents = await readFileContent(file, isImage);
+
+      // Add to file tree
+      current[fileName] = {
+        file: {
+          contents: await readFileContent(file, isImage),
+          encoding: isImage ? 'binary' : 'utf8'
+        }
+      };
+    }
+
+    setFileTree(newTree);
+    autoSave(newTree);
+  };
+
+  const readFileContent = (file, isImage) => {
+    return new Promise((resolve) => {
+      if (!isImage) {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsText(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const buffer = new Uint8Array(e.target.result);
+          resolve(buffer);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    });
+  };
 
   const throttledCursorUpdate = throttle((cursorPos) => {
     setLocalCursor(cursorPos);
@@ -783,9 +931,7 @@ const Project = () => {
     setIsInstalling(true);
 
     try {
-      const sanitizedTree = sanitizeFileTree(fileTree);
-      console.log("Sanitized tree before mount:", JSON.stringify(sanitizedTree, null, 2));
-      await webContainer.mount(sanitizedTree);
+      await webContainer.mount(fileTree);
       const installProcess = await webContainer.spawn("npm", ["install"]);
 
       installProcess.output.pipeTo(new WritableStream({
@@ -857,7 +1003,7 @@ const Project = () => {
 
   // Add these inside the Project component
   const handleCodeChange = (value, viewUpdate) => {
-    if (!currentFile || !viewUpdate) return;
+    if (!currentFile || !viewUpdate || isImageFile(currentFile)) return;
 
     const newContent = value;
     const cursorPos = viewUpdate.state.selection.ranges[0].from;
@@ -868,15 +1014,21 @@ const Project = () => {
       const parts = currentFile.split('/');
       let current = newTree;
 
-      // Navigate to the file location in the tree
-      for (let i = 0; i < parts.length; i++) {
-        if (!current[parts[i]]) current[parts[i]] = {};
+      // Modified path traversal logic
+      for (let i = 0; i < parts.length - 1; i++) { // Stop before last part
+        if (!current[parts[i]] || current[parts[i]].file) {
+          current[parts[i]] = current[parts[i]] || {};
+        }
         current = current[parts[i]];
       }
 
-      // Update file contents
+      // Directly update file contents
       const fileName = parts[parts.length - 1];
-      current[fileName] = { file: { contents: newContent } };
+      if (!current[fileName]) {
+        current[fileName] = { file: { contents: newContent } };
+      } else {
+        current[fileName].file.contents = newContent;
+      }
 
       // Debounced auto-save
       autoSave(newTree);
@@ -1086,6 +1238,14 @@ const Project = () => {
         [userId]: { ...prev[userId], isTyping }
       }));
     });
+
+    // Add cleanup for WebContainer
+    return () => {
+      if (webContainer) {
+        webContainer.teardown();
+        setWebContainer(null);
+      }
+    };
   }, [])
 
   // Auto-scroll to bottom whenever messages update
@@ -1108,8 +1268,7 @@ const Project = () => {
     if (!webContainer || !isInstalled) return;
     async function updateFiles() {
       try {
-        const sanitizedTree = sanitizeFileTree(fileTree);
-        await webContainer.mount(sanitizedTree);
+        await webContainer.mount(fileTree); // Sirf updated files mount karo
         console.log("Files updated in container without restart");
       } catch (error) {
         console.error("Error updating files:", error);
@@ -1151,6 +1310,20 @@ const Project = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [creationContext.type]);
+
+  useEffect(() => {
+    const cleanImageData = (tree) => {
+      Object.entries(tree).forEach(([key, value]) => {
+        if (value?.file?.isImage) {
+          if (value.file.contents.startsWith('data:image')) {
+            value.file.contents = value.file.contents.split(',')[1];
+          }
+        }
+        if (typeof value === 'object') cleanImageData(value);
+      });
+    };
+    cleanImageData(fileTree);
+  }, []);
 
   return (
     <main className="h-screen w-screen flex bg-gradient-to-br from-gray-900 to-blue-900/20 text-white ">
@@ -1356,18 +1529,48 @@ const Project = () => {
         <div className="explorer h-full w-52 flex flex-col border-r border-gray-700">
           <div className="flex items-center justify-between p-4 h-16 border-b border-gray-700">
             <h3 className="text-white font-semibold">EXPLORER</h3>
-            <div className="flex gap-2">
+            <div className="flex items-center">
+              {/* Add Upload Buttons */}
+              <input
+                type="file"
+                id="file-upload"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <input
+                type="file"
+                id="folder-upload"
+                webkitdirectory="true"
+                onChange={handleFolderUpload}
+                className="hidden"
+              />
+
+              <button
+                onClick={() => document.getElementById('file-upload').click()}
+                className="text-blue-400 hover:text-blue-300 p-0.5 rounded-lg transition-all"
+                title="Upload Files"
+              >
+                <i className="ri-file-upload-line text-lg"></i>
+              </button>
+              <button
+                onClick={() => document.getElementById('folder-upload').click()}
+                className="text-blue-400 hover:text-blue-300 p-0.5 rounded-lg transition-all"
+                title="Upload Folder"
+              >
+                <i className="ri-folder-upload-line text-lg"></i>
+              </button>
               <button
                 onClick={() => setCreationContext({ type: 'file', parentPath: '', name: '' })}
-                className="text-blue-400 hover:text-blue-300 p-2 rounded-lg transition-all"
+                className="text-blue-400 hover:text-blue-300 p-0.5 rounded-lg transition-all"
               >
-                <i className="ri-file-add-line text-xl"></i>
+                <i className="ri-file-add-line text-lg"></i>
               </button>
               <button
                 onClick={() => setCreationContext({ type: 'folder', parentPath: '', name: '' })}
-                className="text-blue-400 hover:text-blue-300 p-2 rounded-lg transition-all"
+                className="text-blue-400 hover:text-blue-300 p-0.5 rounded-lg transition-all"
               >
-                <i className="ri-folder-add-line text-xl"></i>
+                <i className="ri-folder-add-line text-lg"></i>
               </button>
             </div>
           </div>
@@ -1449,7 +1652,10 @@ const Project = () => {
                 disabled={isInstalling}
               >
                 {isInstalling ? (
-                  <i className="ri-loader-4-line animate-spin text-blue-400"></i>
+                  <svg className="animate-spin h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
                 ) : (
                   <i className="ri-download-line text-blue-400"></i>
                 )}
@@ -1480,30 +1686,38 @@ const Project = () => {
           {/* Code Editor Content */}
           <div className="editor-content relative overflow-y-auto h-[calc(100%-4rem)]">
             {currentFile ? (
-              <CodeMirror
-                key={currentFile + selectedTheme} // Force remount on theme/file change
-                value={getFileContent(currentFile, fileTree)}
-                theme={THEMES[selectedTheme]}
-                extensions={codeMirrorExtensions(currentFile)}
-                className="h-full"
-                // height="100%"
-                onChange={handleCodeChange}
-                basicSetup={{
-                  lineNumbers: true,
-                  highlightActiveLineGutter: true,
-                  bracketMatching: true,
-                  closeBrackets: true,
-                  autocompletion: true,
-                  rectangularSelection: true,
-                  crosshairCursor: true,
-                  highlightActiveLine: true,
-                  highlightSelectionMatches: true,
-                  foldGutter: true,
-                  syntaxHighlighting: true,
-                  searchKeymap: true,
-                  lintKeymap: true,
-                }}
-              />
+              isImageFile(currentFile) ? (
+                <img
+                  src={`data:${getMimeType(currentFile)};base64,${getFileContent(currentFile, fileTree)}`}
+                  alt="Preview"
+                  className="max-h-full max-w-full object-contain"
+                />
+              ) : (
+                <CodeMirror
+                  key={currentFile + selectedTheme} // Force remount on theme/file change
+                  value={getFileContent(currentFile, fileTree)}
+                  theme={THEMES[selectedTheme]}
+                  extensions={codeMirrorExtensions(currentFile)}
+                  className="h-full"
+                  // height="100%"
+                  onChange={handleCodeChange}
+                  basicSetup={{
+                    lineNumbers: true,
+                    highlightActiveLineGutter: true,
+                    bracketMatching: true,
+                    closeBrackets: true,
+                    autocompletion: true,
+                    rectangularSelection: true,
+                    crosshairCursor: true,
+                    highlightActiveLine: true,
+                    highlightSelectionMatches: true,
+                    foldGutter: true,
+                    syntaxHighlighting: true,
+                    searchKeymap: true,
+                    lintKeymap: true,
+                  }}
+                />
+              )
             ) : (
               <div className="h-full flex flex-col items-center justify-center bg-gray-950/50 text-center p-8">
                 <i className="ri-code-s-slash-line text-6xl text-blue-400 mb-4"></i>
@@ -1535,12 +1749,13 @@ const Project = () => {
                 style={{ zIndex: 40 }}
               >
                 <div className="flex items-center justify-between p-3 border-b border-gray-700">
-                  <input
+                  {/* <input
                     type="text"
                     value={iframeUrl}
                     onChange={(e) => setIframeUrl(e.target.value)}
                     className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-lg mr-4 focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
+                  /> */}
+                  <h3 className="font-semibold text-white rounded-lg px-4 py-2 mr-4">Preview</h3>
                   <div className="flex gap-4">
                     <button
                       onClick={() => setReloadKey(prev => prev + 1)}

@@ -21,18 +21,19 @@ const projectSchema = new mongoose.Schema({
             ref: 'user'
         }
     ],
-    
+
     fileTree: {
-        type: Object,
+        type: mongoose.Schema.Types.Mixed,
+        required: true,
         default: {}
     },
-    
+
     messages: [
         {
-            sender: { 
+            sender: {
                 _id: String,
                 name: String,
-                email: String 
+                email: String
             },
             message: String,
             createdAt: {

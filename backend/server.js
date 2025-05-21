@@ -10,6 +10,15 @@ import { generateResult } from './services/ai.service.js';
 const port = process.env.PORT || 3000;
 const server = http.createServer(app);
 
+// Add error handling for large payloads
+server.on('clientError', (err, socket) => {
+  if (err.code === 'HPE_HEADER_OVERFLOW') {
+    socket.end('HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n');
+  } else {
+    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  }
+});
+
 const io = new Server(server, {
     cors: {
         origin: '*',

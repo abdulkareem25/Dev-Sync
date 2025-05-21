@@ -6,10 +6,13 @@ import * as authMiddleWare from '../middleware/auth.middleware.js'
 const router = Router();
 
 router.post('/create',
-    authMiddleWare.authUser,
-    body('name').isString().withMessage('Name is required'),
-    projectController.createProject
-)
+  authMiddleWare.authUser,
+  body('name')
+    .isString().withMessage('Name must be string')
+    .isLength({ min: 3 }).withMessage('Name must be at least 3 characters')
+    .trim(),
+  projectController.createProject
+);
 
 router.get('/all',
     authMiddleWare.authUser,
