@@ -42,6 +42,24 @@ const Home = () => {
       }).catch(console.error);
   }
 
+  // Delete handler
+ const deleteProject = (projectId, projectName) => {
+    if (!window.confirm(`Are you sure you want to delete project "${projectName}"?`)) return;
+    axios
+      .delete(`/projects/${projectId}`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      })
+      .then(() => {
+        // remove from state
+        setProjects(projects.filter(p => p._id !== projectId));
+        alert(`Project "${projectName}" has been deleted.`);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to delete project: " + err.response?.data?.error || err.message);
+      });
+  };
+
   useEffect(() => {
     axios.get('/projects/all')
       .then((res) => setProjects(res.data.projects))
@@ -108,11 +126,24 @@ const Home = () => {
             <div
               key={project._id}
               onClick={() => navigate(`/project`, { state: { project } })}
-              className={`p-6 rounded-xl bg-gray-800 hover:bg-gray-700 cursor-pointer transition-all border-2 ${user && project.admin?._id === user._id
-                  ? 'border-blue-500'
-                  : 'border-gray-600'
+              className={`p-6 rounded-xl bg-gray-800 hover:bg-gray-700 cursor-pointer transition-all border-2 relative ${user && project.admin?._id === user._id
+                ? 'border-blue-500'
+                : 'border-gray-600'
                 }`}
             >
+              {/* Delete button */}
+              {project.admin?._id === user?._id && (
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    deleteProject(project._id, project.name);
+                  }}
+                  className='absolute top-2 right-2 text-red-400 hover:text-red-600'
+                  title="Delete Project"
+                >
+                  <i className="ri-delete-bin-5-line"></i>
+                </button>
+              )}
               <h3 className='text-xl font-semibold text-white mb-2'>{project.name}</h3>
               <div className='flex items-center gap-2 text-gray-400'>
                 <i className="ri-user-line"></i>

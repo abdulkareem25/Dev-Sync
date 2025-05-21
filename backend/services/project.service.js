@@ -134,3 +134,26 @@ export const updateFileTree = async ({ projectId, fileTree }) => {
 
     return updatedProject
 }
+
+
+export const deleteProject = async ({ projectId, userId }) => {
+  if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
+    throw new Error("Valid projectId is required");
+  }
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Valid userId is required");
+  }
+
+  // Only the admin can delete the project
+  const project = await projectModel.findOne({ _id: projectId });
+  if (!project) {
+    throw new Error("Project not found");
+  }
+  if (project.admin._id.toString() !== userId.toString()) {
+    throw new Error("Only the project admin can delete this project");
+  }
+
+  // Delete the project
+  await projectModel.deleteOne({ _id: projectId });
+  return { success: true };
+};

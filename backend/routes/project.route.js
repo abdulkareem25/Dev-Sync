@@ -47,4 +47,10 @@ router.post('/save-message',
     projectController.saveMessage
 );
 
+router.delete(
+  '/:projectId',
+  authMiddleWare.authUser,
+  projectController.deleteProject
+);
+
 export default router;

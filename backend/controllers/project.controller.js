@@ -168,3 +168,24 @@ export const saveMessage = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+export const deleteProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const loggedInUser = await userModel.findOne({ email: req.user.email });
+    if (!loggedInUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const result = await projectServices.deleteProject({
+      projectId,
+      userId: loggedInUser._id
+    });
+
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in deleteProject:", err);
+    const status = err.message.includes("only") || err.message.includes("required") ? 403 : 400;
+    return res.status(status).json({ error: err.message });
+  }
+};

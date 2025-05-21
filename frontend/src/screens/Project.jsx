@@ -1239,13 +1239,13 @@ const Project = () => {
       }));
     });
 
-    // Add cleanup for WebContainer
-    return () => {
-      if (webContainer) {
-        webContainer.teardown();
-        setWebContainer(null);
-      }
-    };
+    // // Add cleanup for WebContainer  
+    // return () => {
+    //   if (webContainer) {
+    //     webContainer.teardown();
+    //     setWebContainer(null);
+    //   }
+    // };
   }, [])
 
   // Auto-scroll to bottom whenever messages update
