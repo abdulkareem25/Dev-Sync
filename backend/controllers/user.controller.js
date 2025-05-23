@@ -3,9 +3,8 @@ import * as userService from '../services/user.service.js';
 import { validationResult } from 'express-validator';
 import redisClient from '../services/redis.service.js';
 
-
+// Controller to handle user registration
 export const createUserController = async (req, res) => {
-
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -14,17 +13,15 @@ export const createUserController = async (req, res) => {
 
     try {
         const user = await userService.createUser(req.body);
-
         const token = await user.generateJWT();
-
         delete user._doc.password;
-
         res.status(201).json({user, token});
     } catch (error) {
         res.status(400).send(error.message);
     }
 }
 
+// Controller to handle user login
 export const loginController = async (req, res) => {
     const errors = validationResult(req);
 
@@ -55,8 +52,6 @@ export const loginController = async (req, res) => {
 
         const token = await user.generateJWT();
 
-        // const { name } = user;
-
         delete user._doc.password;
 
         res.status(200).json({ user: { ...user._doc } , token });
@@ -66,18 +61,16 @@ export const loginController = async (req, res) => {
     }
 }
 
-
+// Controller to get the profile of the logged-in user
 export const profileController = async (req, res) => {
-
     console.log(req.user);
 
     res.status(200).json({
         user: req.user
     })
-
 }
 
-
+// Controller to handle user logout
 export const logoutController = async (req, res) => {
     try{
 
@@ -96,6 +89,7 @@ export const logoutController = async (req, res) => {
     }
 }
 
+// Controller to get all users (admin)
 export const getAllUsersController = async (req, res) => {
     try {
 
@@ -119,11 +113,12 @@ export const getAllUsersController = async (req, res) => {
     }
 }
 
+// Controller to get the logged-in user's basic info
 export const meController = async (req, res) => {
     try {
         const loggedInUser = await userModel.findOne({
             email: req.user.email
-        }).select("name email") // ✅ Select only name and email    
+        }).select("name email") // Select only name and email    
         return res.status(200).json({
             user: loggedInUser
         })  

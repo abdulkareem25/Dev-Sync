@@ -3,50 +3,52 @@ import { UserContext } from '../context/UserProvider.jsx';
 import { useNavigate } from 'react-router-dom';
 import axios from '../config/axios';
 
+// Component to protect routes that require authentication
 const UserAuth = ({ children }) => {
+    // Access user context
     const { user, setUser } = useContext(UserContext);
+    // State to show loading indicator
     const [loading, setLoading] = useState(true);
+    // Navigation hook
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Get token and user from localStorage
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
 
+        // If no token or user, redirect to login
         if (!token || !storedUser) {
-            console.log('No token or user found in localStorage. Redirecting to login.');
-            setLoading(false); // Ensure loading is set to false before redirecting
+            setLoading(false);
             navigate('/login');
             return;
         }
 
+        // If user is not set, validate token with backend
         if (!user) {
-            console.log('Validating token with backend...');
-            axios.get('/users/me') // Validate token with backend
+            axios.get('/users/me')
                 .then((res) => {
-                    console.log('Token validated. Setting user:', res.data.user);
                     setUser(res.data.user);
                 })
                 .catch((err) => {
-                    console.error('Token validation failed:', err);
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     navigate('/login');
                 })
                 .finally(() => {
-                    console.log('Token validation complete.');
-                    setLoading(false); // Set loading to false after validation
+                    setLoading(false);
                 });
         } else {
-            console.log('User already set. Stopping loading.');
-            setLoading(false); // If user is already set, stop loading
+            setLoading(false);
         }
     }, [user, setUser, navigate]);
 
+    // Show loading indicator while validating
     if (loading) {
-        console.log('Loading...');
-        return <div>Loading...</div>; // Show a loading indicator while validating
+        return <div>Loading...</div>;
     }
 
+    // Render children if authenticated
     return <>{children}</>;
 };
 

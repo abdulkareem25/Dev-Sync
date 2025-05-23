@@ -1,6 +1,7 @@
 import projectModel from '../models/project.model.js'
 import mongoose from 'mongoose'
 
+// Create a new project with the given name and admin
 export const createProject = async ({ name, admin }) => {
     if (!name) {
         throw new Error('Name is required');
@@ -27,7 +28,7 @@ export const createProject = async ({ name, admin }) => {
     return project;
 };
 
-
+// Get all projects for a specific user
 export const getAllProjectByUserId = async ({ userId }) => {
     if (!userId) {
         throw new Error('UserId is required')
@@ -40,7 +41,7 @@ export const getAllProjectByUserId = async ({ userId }) => {
     return allUserProjects
 }
 
-
+// Add users to a project
 export const addUsersToProject = async ({ projectId, users, userId }) => {
 
     if (!projectId) {
@@ -92,7 +93,7 @@ export const addUsersToProject = async ({ projectId, users, userId }) => {
     return updatedProject
 }
 
-
+// Get project details by project ID
 export const getProjectById = async ({ projectId })  => {
 
     if(!projectId) {
@@ -110,7 +111,7 @@ export const getProjectById = async ({ projectId })  => {
     return project
 }
 
-
+// Update the file tree of a project
 export const updateFileTree = async ({ projectId, fileTree }) => {
     if (!projectId) {
         throw new Error("projectId is required")
@@ -135,7 +136,7 @@ export const updateFileTree = async ({ projectId, fileTree }) => {
     return updatedProject
 }
 
-
+// Delete a project by project ID
 export const deleteProject = async ({ projectId, userId }) => {
   if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
     throw new Error("Valid projectId is required");
@@ -156,4 +157,33 @@ export const deleteProject = async ({ projectId, userId }) => {
   // Delete the project
   await projectModel.deleteOne({ _id: projectId });
   return { success: true };
+};
+
+// Remove a user from a project (admin only, cannot remove admin)
+export const removeUserFromProject = async ({ projectId, userId, adminId }) => {
+    if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
+        throw new Error("Valid projectId is required");
+    }
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        throw new Error("Valid userId is required");
+    }
+    if (!adminId || !mongoose.Types.ObjectId.isValid(adminId)) {
+        throw new Error("Valid adminId is required");
+    }
+    const project = await projectModel.findOne({ _id: projectId });
+    if (!project) {
+        throw new Error("Project not found");
+    }
+    if (project.admin._id.toString() !== adminId.toString()) {
+        throw new Error("Only the project admin can remove collaborators");
+    }
+    if (userId === project.admin._id.toString()) {
+        throw new Error("Cannot remove the admin from the project");
+    }
+    const updatedProject = await projectModel.findOneAndUpdate(
+        { _id: projectId },
+        { $pull: { users: userId } },
+        { new: true }
+    ).populate('users');
+    return updatedProject;
 };

@@ -10,9 +10,15 @@ const Home = () => {
   const [projects, setProjects] = useState([]);
   const navigate = useNavigate();
 
+  // Show 'Guest' if no user is logged in
+  const displayName = user?.name ? user.name : 'Guest';
+
   function createProject(e) {
     e.preventDefault();
-    if (!user || !user._id) return;
+    if (!user || !user._id) {
+      alert('Please login or register to create a project.');
+      return;
+    }
     if (!projectName.trim()) return;
 
     axios.post('/projects/create', {
@@ -20,11 +26,6 @@ const Home = () => {
         'Authorization': `Bearer ${user.token}`
       },
       name: projectName.trim(),
-      // admin: {
-      //   _id: user._id,
-      //   name: user.name,
-      //   email: user.email
-      // }
     }).then((res) => {
       setIsModalOpen(false);
       setProjectName("");
@@ -33,12 +34,14 @@ const Home = () => {
   }
 
   function handleLogout() {
+    if (!window.confirm('Are you sure you want to logout?')) return;
     axios.get('/users/logout')
       .then(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
-        navigate('/');
+        navigate('/'); // Go to home page after logout
+        window.location.reload(); // Reload the page after logout
       }).catch(console.error);
   }
 
@@ -71,7 +74,7 @@ const Home = () => {
       {/* Navigation Bar */}
       <nav className='p-6 bg-gray-800 shadow-xl'>
         <div className='flex justify-between items-center max-w-7xl mx-auto'>
-          <h1 className='text-2xl font-bold text-blue-400'>DevSync AI</h1>
+          <h1 className='text-2xl font-bold text-blue-400'>AI-Enhanced Collaboration Platform for Developers</h1>
           <div className='flex gap-4'>
             {user ? (
               <>
@@ -111,10 +114,10 @@ const Home = () => {
       {/* Hero Section */}
       <section className='text-center py-20 px-4'>
         <h1 className='text-5xl font-bold text-white mb-6'>
-          Welcome {user?.name && <span className='text-blue-400'>{user.name}</span>}
+          Welcome <span className='text-blue-400'>{displayName}</span>
         </h1>
         <p className='text-gray-300 text-xl mb-8'>
-          Collaborate, Manage, and Deploy Projects Efficiently
+          Collaborate, Manage, and Run Projects Efficiently
         </p>
       </section>
 

@@ -27,6 +27,7 @@
     "@uiw/react-codemirror": "4.21.8",
     "@webcontainer/api": "^1.5.1-internal.9",
     "axios": "^1.7.9",
+    "jszip": "^3.10.1",
     "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.7.4",
     "react": "^19.0.0",

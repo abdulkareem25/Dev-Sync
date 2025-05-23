@@ -6,16 +6,17 @@ import Home from '../screens/Home'
 import Project from '../screens/Project'
 import UserAuth from '../auth/UserAuth'
 
+// Main routing component for the app
 const AppRoutes = () => {
     return (
         <div>
             <BrowserRouter>
                 <Routes>
-                    <Route path='/' element={<Register />}/>
-                    <Route path='/login' element={<Login />}/>
-                    <Route path='/home' element={<UserAuth><Home /></UserAuth>}/>
-                    <Route path='/project' element={<UserAuth><Project /></UserAuth>}/>
-
+                    <Route path='/' element={<Home />} />
+                    <Route path='/login' element={<Login />} />
+                    <Route path='/register' element={<Register />} />
+                    {/* Protect the project route with authentication */}
+                    <Route path='/project' element={<UserAuth><Project /></UserAuth>} />
                 </Routes>
             </BrowserRouter>
         </div>

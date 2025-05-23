@@ -10,7 +10,7 @@ import { generateResult } from './services/ai.service.js';
 const port = process.env.PORT || 3000;
 const server = http.createServer(app);
 
-// Add error handling for large payloads
+// Handle large payload errors
 server.on('clientError', (err, socket) => {
   if (err.code === 'HPE_HEADER_OVERFLOW') {
     socket.end('HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n');
@@ -19,6 +19,7 @@ server.on('clientError', (err, socket) => {
   }
 });
 
+// Initialize Socket.IO server
 const io = new Server(server, {
     cors: {
         origin: '*',
@@ -26,6 +27,7 @@ const io = new Server(server, {
     }
 });
 
+// Authenticate socket connections
 io.use(async (socket, next) => {
     try {
         const token = socket.handshake.auth?.token || socket.handshake.headers.authorization?.split(' ')[1];
@@ -61,7 +63,8 @@ io.on('connection', socket => {
             const result = await generateResult(message.replace('@ai', ''));
             io.to(socket.roomId).emit('project-message', {
                 message: result,
-                sender: { _id: 'ai', name: 'AI' }
+                sender: { _id: 'ai', name: 'AI' },
+                createdAt: new Date().toISOString(), // Add timestamp for AI message
             });
         }
     });
@@ -79,6 +82,11 @@ io.on('connection', socket => {
     // Typing status relay (if not present)
     socket.on('TYPING_STATUS', data => {
         socket.broadcast.to(socket.roomId).emit('TYPING_STATUS', data);
+    });
+
+    // Relay USER_ONLINE event to all clients in the same room
+    socket.on('USER_ONLINE', data => {
+        socket.broadcast.to(socket.roomId).emit('USER_ONLINE', data);
     });
 
     socket.on('disconnect', () => {
