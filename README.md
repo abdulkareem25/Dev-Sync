@@ -73,22 +73,22 @@ cd project-name
 
 2️⃣ *Install backend dependencies* 
 sh
-cd server
+cd ../backend
 npm install
 
 3️⃣ Install frontend dependencies
 sh
-cd ../client
+cd ../frontend
 npm install
 
 🔹 Run the Project
 
 4️⃣ Start the backend server
 sh
-cd ../server
+cd ../backend
 npx nodemon
 
 5️⃣ Start the frontend application
-```sh
-cd ../client
+sh
+cd ../frontend
 npm run dev
