@@ -66,29 +66,32 @@ This application enhances teamwork and efficiency by integrating *AI-powered ass
 
 ### 🔹 Setup Locally  
 
-1️⃣ *Clone the repository*  
+##### 1️⃣ Clone the repository  
 sh
 git clone [repository URL]
 cd project-name
 
-2️⃣ *Install backend dependencies* 
-sh
-cd ../backend
+##### 2️⃣ Install backend dependencies 
+##### cd backend
+```
 npm install
+```
 
-3️⃣ Install frontend dependencies
-sh
-cd ../frontend
+##### 3️⃣ Install frontend dependencies
+##### cd frontend
+```
 npm install
+```
 
-🔹 Run the Project
+### 🔹 Run the Project
 
-4️⃣ Start the backend server
-sh
-cd ../backend
+##### 4️⃣ Start the backend server
+##### cd backend
+```
 npx nodemon
-
-5️⃣ Start the frontend application
-sh
-cd ../frontend
+```
+##### 5️⃣ Start the frontend application
+##### cd frontend
+```
 npm run dev
+```
