@@ -22,6 +22,15 @@ export default defineConfig({
     }
   },
 
+  // Preview options
+  preview: {
+    // Set security headers for cross-origin isolation (for things like SharedArrayBuffer)
+    headers: {
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin"
+    }
+  },
+
   // Optimize dependencies for faster dev startup
   optimizeDeps: {
     include: [
