@@ -6,6 +6,10 @@ import projectRoutes from './routes/project.route.js';
 import aiRoutes from './routes/ai.route.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 // Connect to MongoDB database
 connect(); 
@@ -14,7 +18,7 @@ const app = express();
 
 // Enable CORS for all origins and methods
 app.use(cors({ 
-  origin: '*', 
+  origin: process.env.FRONTEND_URL?.split(',') || '*', 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
@@ -55,6 +59,15 @@ app.use('/ai', aiRoutes);
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error',
+    error: process.env.NODE_ENV === 'production' ? {} : err
+  });
 });
 
 export default app;
