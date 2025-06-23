@@ -1658,7 +1658,7 @@ const Project = () => {
     // Main layout: two sections (chat/collaborators and editor/coding)
     <main className="h-screen w-screen flex bg-gradient-to-br from-gray-900 to-blue-900/20 text-white overflow-hidden">
       {/* ===== Left Chat Section ===== */}
-      <section className="left relative h-full flex flex-col w-[350px] bg-gray-800/80 shadow-2xl backdrop-blur-sm">
+      <section className="left relative h-full flex flex-col w-[350px] bg-gray-800/80 shadow-2xl backdrop-blur-sm border-r border-gray-700">
         <div className="chats h-full flex flex-col">
           {/* --- Chat Header: Project name, home button, collaborators toggle --- */}
           <header className="flex items-center justify-between w-full bg-gray-900/90 p-4 h-16 border-b border-gray-700 backdrop-blur-sm">
@@ -1809,7 +1809,7 @@ const Project = () => {
               title="Send Message"
               aria-label="Send Message"
             >
-              <i className="ri-send-plane-fill text-2xl"></i>
+              <i className="ri-send-plane-2-fill ml-0.5 text-xl"></i>
             </button>
           </div>
         </div>
@@ -2119,7 +2119,7 @@ const Project = () => {
                 className={`preview-panel fixed bottom-0 left-0 right-0 h-full bg-gray-900 border-gray-700 transition-transform duration-300 ease-in-out ${isPreviewPanelOpen ? 'translate-y-0' : 'translate-y-full'}`}
                 style={{ zIndex: 40 }}
               >
-                <div className="flex items-center justify-between p-3 border-b border-gray-700">
+                <div className="flex items-center justify-between p-[11.5px] border-b border-gray-700">
                   {/* <input
                     type="text"
                     value={iframeUrl}
