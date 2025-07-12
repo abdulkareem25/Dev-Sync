@@ -1,247 +1,471 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FiCode, FiUsers, FiMessageSquare, FiCloud, FiZap, FiShield } from 'react-icons/fi';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
+import { UserContext } from '../context/UserProvider.jsx';
+import axios from '../config/axios';
+import { useNavigate } from 'react-router-dom';
+import { FiPlus, FiLogOut, FiTrash2, FiUser, FiDownload, FiPlay, FiFolder, FiSettings, FiHelpCircle } from 'react-icons/fi';
 
-const FeatureCard = ({ icon, title, description }) => (
-  <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all border border-gray-700 hover:border-blue-500">
-    <div className="text-blue-400 mb-4 text-3xl">{icon}</div>
-    <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-    <p className="text-gray-400">{description}</p>
-  </div>
-);
+const Home = () => {
+  const { user, setUser } = useContext(UserContext);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [projectName, setProjectName] = useState('');
+  const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(null);
+  const navigate = useNavigate();
 
-const Home = () => (
-  <div className="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen">
-    {/* Navigation */}
-    <nav className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-      <div className="flex items-center">
-        <div className="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center mr-3">
-          <FiCode className="text-white text-xl" />
-        </div>
-        <span className="text-white text-2xl font-bold">DevSync</span>
-      </div>
+  // Show 'Guest' if no user is logged in
+  const displayName = user?.name ? user.name : 'Guest';
+
+  // Fetch projects with error handling
+  const fetchProjects = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get('/projects/all');
+      setProjects(response.data.projects || []);
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+      alert('Failed to load projects. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  // Create project with validation
+  const createProject = async (e) => {
+    e.preventDefault();
+    
+    if (!user?.token) {
+      alert('Please login or register to create a project.');
+      navigate('/login');
+      return;
+    }
+
+    const trimmedName = projectName.trim();
+    if (!trimmedName) {
+      alert('Project name cannot be empty');
+      return;
+    }
+
+    try {
+      setCreateLoading(true);
+      const res = await axios.post('/projects/create', {
+        name: trimmedName,
+      }, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+
+      setProjects(prev => [res.data, ...prev]);
+      setIsModalOpen(false);
+      setProjectName('');
+    } catch (error) {
+      console.error('Project creation failed:', error);
+      alert(`Failed to create project: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  // Logout with confirmation
+  const handleLogout = async () => {
+    if (!window.confirm('Are you sure you want to logout?')) return;
+    
+    try {
+      await axios.get('/users/logout', {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
       
-      <div className="hidden md:flex space-x-6">
-        <a href="#features" className="text-gray-400 hover:text-white transition">Features</a>
-        <a href="#testimonials" className="text-gray-400 hover:text-white transition">Testimonials</a>
-        <a href="#pricing" className="text-gray-400 hover:text-white transition">Pricing</a>
-      </div>
-      
-      <div className="flex items-center space-x-4">
-        <Link 
-          to="/login" 
-          className="px-4 py-2 text-gray-300 hover:text-white transition"
-        >
-          Sign In
-        </Link>
-        <Link 
-          to="/register" 
-          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white transition"
-        >
-          Get Started
-        </Link>
-      </div>
-    </nav>
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      alert('Failed to logout. Please try again.');
+    }
+  };
 
-    {/* Hero Section */}
-    <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 lg:py-32">
-      <div className="text-center">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white">
-          <span className="block">AI-Powered</span>
-          <span className="block text-blue-400 mt-2">Developer Collaboration</span>
-        </h1>
-        
-        <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-400">
-          Code together in real-time with AI assistance, project management, and cloud execution - all in one platform.
-        </p>
-        
-        <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-          <Link 
-            to="/register" 
-            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-lg transition"
-          >
-            Start Free Trial
-          </Link>
-          <Link 
-            to="/demo" 
-            className="inline-flex items-center justify-center px-6 py-3 border border-gray-700 text-base font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700 transition"
-          >
-            <FiZap className="mr-2 text-blue-400" />
-            Live Demo
-          </Link>
-        </div>
-        
-        <div className="mt-12 max-w-4xl mx-auto bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
-          <div className="aspect-w-16 aspect-h-9">
-            <div className="bg-gray-900 flex items-center justify-center h-full">
-              <div className="text-center p-8">
-                <div className="inline-flex items-center mb-4">
-                  <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                </div>
-                <div className="text-gray-200 font-mono text-left max-w-xl mx-auto">
-                  <div className="mb-2"><span className="text-blue-400">$ </span>devsync start-project --ai-assistant</div>
-                  <div className="text-green-400 mb-2">✓ Project initialized with AI support</div>
-                  <div className="mb-2"><span className="text-blue-400">$ </span>devsync add-collaborator team@email.com</div>
-                  <div className="text-green-400">✓ Collaborator added - real-time session started</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  // Delete project with confirmation
+  const deleteProject = async (projectId, projectName) => {
+    if (!window.confirm(`Are you sure you want to delete project "${projectName}"?`)) return;
+    
+    try {
+      setDeleteLoading(projectId);
+      await axios.delete(`/projects/${projectId}`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
 
-    {/* Features Section */}
-    <div id="features" className="py-16 bg-gray-900/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-base text-blue-400 font-semibold tracking-wide uppercase">Features</h2>
-          <p className="mt-2 text-3xl font-extrabold text-white sm:text-4xl">
-            Everything your team needs to ship faster
-          </p>
-          <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-400">
-            All-in-one platform for collaborative development with AI superpowers
-          </p>
-        </div>
+      setProjects(prev => prev.filter(p => p._id !== projectId));
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert(`Failed to delete project: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
 
-        <div className="mt-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard 
-              icon={<FiCode />}
-              title="Real-Time Collaboration"
-              description="Code together with your team in real-time with shared terminals, editors, and debugging tools."
-            />
-            <FeatureCard 
-              icon={<FiZap />}
-              title="AI-Powered Assistance"
-              description="Get AI suggestions for code, debugging help, and automated reviews directly in your workflow."
-            />
-            <FeatureCard 
-              icon={<FiCloud />}
-              title="Cloud Execution"
-              description="Run and test code directly in secure browser containers with no setup required."
-            />
-            <FeatureCard 
-              icon={<FiUsers />}
-              title="Team Management"
-              description="Invite collaborators, assign roles, and manage project permissions with ease."
-            />
-            <FeatureCard 
-              icon={<FiMessageSquare />}
-              title="Integrated Chat"
-              description="Communicate with your team without leaving the IDE with project-specific chat rooms."
-            />
-            <FeatureCard 
-              icon={<FiShield />}
-              title="Enterprise Security"
-              description="End-to-end encryption, SOC 2 compliance, and granular access controls."
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+  // Close modal on backdrop click
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      setIsModalOpen(false);
+    }
+  };
 
-    {/* Testimonials */}
-    <div id="testimonials" className="py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-base text-blue-400 font-semibold tracking-wide uppercase">Testimonials</h2>
-          <p className="mt-2 text-3xl font-extrabold text-white sm:text-4xl">
-            Trusted by development teams
-          </p>
-        </div>
-        
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              quote: "DevSync cut our onboarding time in half. New developers are productive on day one with our AI-assisted environment.",
-              author: "Sarah Johnson",
-              role: "CTO at TechFlow",
-              company: "TechFlow"
-            },
-            {
-              quote: "The real-time collaboration features eliminated 80% of our merge conflicts. Our team velocity has never been higher.",
-              author: "Michael Chen",
-              role: "Lead Engineer",
-              company: "NexusAI"
-            },
-            {
-              quote: "With DevSync's AI assistant, we've reduced bugs by 60%. It's like having an extra senior engineer on every team.",
-              author: "Emma Rodriguez",
-              role: "Engineering Director",
-              company: "InnovaSystems"
-            }
-          ].map((testimonial, index) => (
-            <div key={index} className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-              <div className="text-blue-400 text-5xl mb-4">"</div>
-              <p className="text-gray-300 mb-6">"{testimonial.quote}"</p>
-              <div className="flex items-center">
-                <div className="bg-gray-700 border-2 border-dashed rounded-xl w-12 h-12" />
-                <div className="ml-4">
-                  <p className="text-lg font-medium text-white">{testimonial.author}</p>
-                  <p className="text-blue-400">{testimonial.role}</p>
-                  <p className="text-gray-500 text-sm">{testimonial.company}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+  // Close modal on ESC key
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setIsModalOpen(false);
+    };
+    
+    if (isModalOpen) {
+      window.addEventListener('keydown', handleEsc);
+    }
+    
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isModalOpen]);
 
-    {/* CTA Section */}
-    <div className="py-16 bg-gradient-to-r from-blue-900/50 to-indigo-900/50">
-      <div className="max-w-7xl mx-auto px-4 text-center">
-        <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-          Ready to transform your development workflow?
-        </h2>
-        <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-300">
-          Join thousands of developers shipping better code faster
-        </p>
-        <div className="mt-8 flex justify-center">
-          <Link 
-            to="/register" 
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 shadow-lg transition"
-          >
-            Start Free Trial
-            <svg className="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </Link>
-        </div>
-        <p className="mt-4 text-gray-400 text-sm">
-          No credit card required • Free for 14 days
-        </p>
-      </div>
-    </div>
-
-    {/* Footer */}
-    <footer className="bg-gray-900 py-12 border-t border-gray-800">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between items-center">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+      {/* Navigation Bar */}
+      <nav className='p-4 bg-gray-800 shadow-xl'>
+        <div className='flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto gap-4'>
           <div className="flex items-center">
-            <div className="bg-blue-500 w-8 h-8 rounded-lg flex items-center justify-center mr-3">
-              <FiCode className="text-white text-lg" />
+            <div className="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center mr-3">
+              <FiFolder className="text-white text-xl" />
             </div>
-            <span className="text-white text-xl font-bold">DevSync</span>
+            <h1 className='text-xl md:text-2xl font-bold text-blue-400'>DevSync: AI Collaboration Platform</h1>
           </div>
           
-          <div className="mt-6 md:mt-0 flex space-x-6">
-            <a href="#" className="text-gray-400 hover:text-white transition">Terms</a>
-            <a href="#" className="text-gray-400 hover:text-white transition">Privacy</a>
-            <a href="#" className="text-gray-400 hover:text-white transition">Docs</a>
-            <a href="#" className="text-gray-400 hover:text-white transition">Status</a>
+          <div className='flex gap-3'>
+            {user ? (
+              <>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className='bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg transition-all flex items-center gap-2 text-sm'
+                >
+                  <FiPlus /> New Project
+                </button>
+                <div className="flex items-center gap-2 ml-2 border-l border-gray-700 pl-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                    <FiUser />
+                  </div>
+                  <span className="hidden md:inline text-sm">{user.name}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className='bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg transition-all flex items-center gap-2 text-sm'
+                  title="Logout"
+                >
+                  <FiLogOut />
+                </button>
+              </>
+            ) : (
+              <div className='flex gap-3'>
+                <button
+                  onClick={() => navigate('/login')}
+                  className='bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-all text-sm'
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => navigate('/register')}
+                  className='bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-all text-sm'
+                >
+                  Register
+                </button>
+              </div>
+            )}
           </div>
         </div>
-        
-        <div className="mt-8 border-t border-gray-800 pt-8 text-center">
-          <p className="text-gray-500 text-sm">© 2023 DevSync, Inc. All rights reserved.</p>
+      </nav>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Welcome Section */}
+        <div className="text-center py-8">
+          <h1 className='text-3xl md:text-4xl font-bold text-white mb-4'>
+            Welcome, <span className='text-blue-400'>{displayName}</span>
+          </h1>
+          <p className='text-gray-400 text-lg max-w-2xl mx-auto'>
+            Collaborate in real-time with AI assistance. Create, manage, and run your projects efficiently.
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+            <div className="flex items-center">
+              <div className="bg-blue-500/20 p-3 rounded-lg mr-4">
+                <FiFolder className="text-blue-400 text-xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold">{projects.length}</h3>
+                <p className="text-gray-400 text-sm">Total Projects</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+            <div className="flex items-center">
+              <div className="bg-green-500/20 p-3 rounded-lg mr-4">
+                <FiDownload className="text-green-400 text-xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold">5</h3>
+                <p className="text-gray-400 text-sm">Dependencies Installed</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+            <div className="flex items-center">
+              <div className="bg-purple-500/20 p-3 rounded-lg mr-4">
+                <FiPlay className="text-purple-400 text-xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold">12</h3>
+                <p className="text-gray-400 text-sm">Projects Executed</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Projects Section */}
+        <div className="mb-16">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h2 className='text-2xl font-bold text-white'>Your Projects</h2>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className='bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center gap-2 text-sm'
+              >
+                <FiPlus /> Create Project
+              </button>
+              <button
+                className='bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg flex items-center gap-2 text-sm'
+                onClick={() => alert('Help documentation will open')}
+              >
+                <FiHelpCircle /> Help
+              </button>
+            </div>
+          </div>
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          )}
+
+          {/* Projects Grid */}
+          {!isLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project) => (
+                <div
+                  key={project._id}
+                  onClick={() => navigate(`/project`, { state: { project } })}
+                  className={`p-6 rounded-xl bg-gray-800 hover:bg-gray-700 cursor-pointer transition-all border-2 relative group ${
+                    user && project.admin?._id === user._id
+                      ? 'border-blue-500'
+                      : 'border-gray-700'
+                  }`}
+                >
+                  {/* Project Actions */}
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {project.admin?._id === user?._id && (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          deleteProject(project._id, project.name);
+                        }}
+                        className='bg-red-600 hover:bg-red-700 p-2 rounded-lg transition-all'
+                        title="Delete Project"
+                        disabled={deleteLoading === project._id}
+                      >
+                        {deleteLoading === project._id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                        ) : (
+                          <FiTrash2 />
+                        )}
+                      </button>
+                    )}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        alert('Project settings will open');
+                      }}
+                      className='bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-all'
+                      title="Settings"
+                    >
+                      <FiSettings />
+                    </button>
+                  </div>
+
+                  <div className="flex items-start mb-4">
+                    <div className="bg-blue-500/20 p-3 rounded-lg mr-4">
+                      <FiFolder className="text-blue-400 text-xl" />
+                    </div>
+                    <div>
+                      <h3 className='text-xl font-semibold text-white mb-1 truncate max-w-[200px]'>{project.name}</h3>
+                      <div className='flex items-center gap-2 text-gray-400 text-sm'>
+                        <FiUser className="text-gray-500" />
+                        <span>{project.admin?.name}</span>
+                        {user && project.admin?._id === user._id && (
+                          <span className='ml-2 px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full'>
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        alert('Dependencies will be installed');
+                      }}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded-lg flex items-center justify-center gap-2 text-sm"
+                    >
+                      <FiDownload /> Install
+                    </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        alert('Code will be executed');
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded-lg flex items-center justify-center gap-2 text-sm"
+                    >
+                      <FiPlay /> Run
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && projects.length === 0 && (
+            <div className='text-center py-12 border-2 border-dashed border-gray-700 rounded-xl'>
+              <div className='text-blue-400 text-5xl mb-4'>
+                <FiFolder className="mx-auto" />
+              </div>
+              <p className='text-gray-400 text-lg mb-6'>
+                No projects found. Create your first project to get started!
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className='bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg text-lg flex items-center justify-center gap-2 mx-auto'
+              >
+                <FiPlus /> Create New Project
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="mb-16">
+          <h2 className='text-2xl font-bold text-white mb-6'>Recent Activity</h2>
+          <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden">
+            <div className="divide-y divide-gray-700">
+              {[
+                { id: 1, user: "You", action: "created", project: "E-commerce API", time: "2 hours ago" },
+                { id: 2, user: "Sarah Johnson", action: "updated", project: "AI Chatbot", time: "4 hours ago" },
+                { id: 3, user: "You", action: "executed", project: "Weather App", time: "1 day ago" },
+                { id: 4, user: "Michael Chen", action: "added dependency", project: "Payment Gateway", time: "2 days ago" },
+              ].map(activity => (
+                <div key={activity.id} className="p-4 hover:bg-gray-700/50 transition-colors">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white mr-3">
+                      <FiUser />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-gray-300">
+                        <span className="font-medium">{activity.user}</span> {activity.action} <span className="text-blue-400">{activity.project}</span>
+                      </p>
+                      <p className="text-gray-500 text-sm">{activity.time}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-    </footer>
-  </div>
-);
+
+      {/* Create Project Modal */}
+      {isModalOpen && (
+        <div 
+          className='fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50'
+          onClick={handleBackdropClick}
+        >
+          <div 
+            className='bg-gray-800 rounded-xl p-6 w-full max-w-md relative'
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+          >
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className='absolute top-4 right-4 text-gray-400 hover:text-white text-xl'
+              aria-label="Close modal"
+            >
+              &times;
+            </button>
+            
+            <h3 id="modal-title" className='text-2xl font-bold text-white mb-6'>
+              Create New Project
+            </h3>
+            
+            <form onSubmit={createProject}>
+              <label htmlFor="project-name" className='block text-gray-300 mb-2'>
+                Project Name
+              </label>
+              <input
+                id="project-name"
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Enter project name"
+                className='w-full px-4 py-3 bg-gray-700 rounded-lg text-white mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none'
+                required
+                autoFocus
+                maxLength={60}
+              />
+              
+              <div className='flex justify-end gap-4'>
+                <button
+                  type='button'
+                  onClick={() => setIsModalOpen(false)}
+                  className='px-6 py-2 text-gray-300 hover:text-white transition-all'
+                  disabled={createLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type='submit'
+                  className='bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-all flex items-center justify-center min-w-[120px]'
+                  disabled={createLoading || !projectName.trim()}
+                >
+                  {createLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                  ) : (
+                    <>
+                      <FiPlus className="mr-2" /> Create
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default Home;
