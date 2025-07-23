@@ -3,9 +3,10 @@ import axios from "axios";
 
 // Create an axios instance with base URL from environment variable
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: import.meta.env.BACKEND_URL,
 });
 
+console.log("Axios instance created with base URL:", import.meta.env.BACKEND_URL);
 // Request Interceptor: Attach JWT token from localStorage to every request if available
 axiosInstance.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
