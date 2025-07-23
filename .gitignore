@@ -1,4 +1,5 @@
 package-lock.json
 backend/.env
-frontend/.env
+backend/.env.development.local
+backend/.env.production.local
 backup

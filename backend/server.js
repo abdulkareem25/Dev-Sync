@@ -1,4 +1,5 @@
-import 'dotenv/config';
+// import 'dotenv/config';
+import { PORT } from './config/env.js';
 import http from 'http';
 import app from './app.js';
 import jwt from 'jsonwebtoken';
@@ -7,7 +8,6 @@ import mongoose from 'mongoose';
 import projectModel from './models/project.model.js';
 import { generateResult } from './services/ai.service.js';
 
-const port = process.env.PORT || 3000;
 const server = http.createServer(app);
 
 // Handle large payload errors
@@ -95,4 +95,4 @@ io.on('connection', socket => {
     });
 });
 
-server.listen(port, () => console.log(`Server running on port ${port}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
