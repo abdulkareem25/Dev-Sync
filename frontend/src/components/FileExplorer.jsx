@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { Icon } from '@iconify/react';
 
 const fileIcons = {
+  json: <Icon icon="devicon:json" width="1em" height="1em" color="#f7df1e" />,
   js: <Icon icon="devicon:javascript" width="1em" height="1em" color="#f7e018" />,
   jsx: <Icon icon="devicon:react" width="1em" height="1em" color="#61dafb" />,
   ts: <Icon icon="devicon:typescript" width="1em" height="1em" color="#3178c6" />,
